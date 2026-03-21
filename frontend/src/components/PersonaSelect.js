@@ -77,8 +77,8 @@ export function renderPersonaSelect(container) {
             <div class="persona-tagline">"${p.tagline}"</div>
             <div class="persona-tags">
               ${(p.style_adjectives || []).slice(0, 3).map(adj =>
-                `<span class="persona-tag" style="color:${p.accent_color_hex};border-color:${p.border_color_hex}">${adj}</span>`
-              ).join('')}
+    `<span class="persona-tag" style="color:${p.accent_color_hex};border-color:${p.border_color_hex}">${adj}</span>`
+  ).join('')}
             </div>
           </button>
         `).join('')}
@@ -96,9 +96,15 @@ export function renderPersonaSelect(container) {
     });
   });
 
-  container.querySelector('#back-btn').addEventListener('click', () => actions.goTo('problem'));
+  container.querySelector('#back-btn').addEventListener('click', () => {
+    if (state.comingFromKnowledgeGraph) {
+      actions.goTo('knowledgeGraph');
+    } else {
+      actions.goTo('problem');
+    }
+  });
 }
 
 function escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
