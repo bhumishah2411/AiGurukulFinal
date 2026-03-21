@@ -26,6 +26,7 @@ export const state = {
   error: null,
   xp: 0,
   level: 0,
+  comingFromKnowledgeGraph: false,
   listeners: [],
 };
 
@@ -60,6 +61,14 @@ export const actions = {
   goTo(screen) {
     state.screen = screen;
     state.error = null;
+    if (screen === 'landing') {
+      state.comingFromKnowledgeGraph = false;
+    }
+    notify();
+  },
+
+  setFromKnowledgeGraph(val) {
+    state.comingFromKnowledgeGraph = val;
     notify();
   },
 

@@ -60,6 +60,7 @@ export const graphEdges = [
   { source: 2, target: 19, label: 'translates' },
   { source: 2, target: 20, label: 'simplifies' },
   { source: 2, target: 21, label: 'simplifies' },
+  { source: 2, target: 22, label: 'translates' },
   { source: 2, target: 23, label: 'translates' },
   
   // Context Bot linking to Practices and Arts
@@ -70,6 +71,7 @@ export const graphEdges = [
   { source: 3, target: 13, label: 'details' },
   { source: 3, target: 15, label: 'teaches' },
   { source: 3, target: 16, label: 'demystifies' },
+  { source: 3, target: 17, label: 'explains' },
 
   // Digitization to texts & arts
   { source: 4, target: 5, label: 'preserves images of' },

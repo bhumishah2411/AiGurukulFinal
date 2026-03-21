@@ -895,6 +895,280 @@
       font-size: 13px;
       margin-top: 2px;
     }
+
+    /* ── Manuscript Translator ─────────────────────────────────────────── */
+    .translate-body {
+      flex: 1;
+      padding: 32px 28px;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    .translate-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    
+    .translate-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+    
+    @media(max-width: 768px) {
+      .translate-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .translate-left, .translate-right {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .translate-box {
+      background: var(--surface);
+      border: 1px solid var(--gold-border);
+      border-radius: var(--r-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .box-header {
+      padding: 12px 16px;
+      background: rgba(212, 175, 55, 0.05);
+      border-bottom: 1px dashed var(--gold-border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .box-icon {
+      font-size: 16px;
+    }
+    
+    .box-title {
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--gold);
+    }
+    
+    .translate-textarea {
+      width: 100%;
+      height: 180px;
+      background: transparent;
+      border: none;
+      padding: 16px;
+      color: var(--text);
+      font-family: 'Lato', sans-serif;
+      font-size: 15px;
+      resize: none;
+      outline: none;
+    }
+    
+    .translate-upload {
+      padding: 16px;
+      border-top: 1px dashed var(--gold-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .translate-upload:hover {
+      background: rgba(212, 175, 55, 0.03);
+    }
+    
+    .upload-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+      opacity: 0.8;
+    }
+    
+    .upload-text {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    
+    .upload-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    
+    .translate-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--surface);
+      border: 1px solid var(--gold-border);
+      border-radius: var(--r-md);
+      padding: 12px 16px;
+    }
+    
+    .lang-selector {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .lang-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-family: 'Cinzel', serif;
+    }
+    
+    .lang-select {
+      background: var(--bg2);
+      border: 1px solid var(--gold-border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: var(--r-sm);
+      font-size: 14px;
+      font-family: 'Lato', sans-serif;
+      width: 100%;
+      outline: none;
+      appearance: none;
+    }
+    
+    .sample-card {
+      background: transparent;
+      border-bottom: 1px solid var(--gold-border);
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .sample-card:last-child {
+      border-bottom: none;
+    }
+    
+    .sample-card:hover {
+      background: rgba(212, 175, 55, 0.05);
+    }
+    
+    .sample-title {
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 4px;
+    }
+    
+    .sample-excerpt {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    .translate-right {
+      background: var(--surface2);
+      border: 1px solid var(--gold-border);
+      border-radius: var(--r-lg);
+      overflow-y: auto;
+      max-height: calc(100vh - 160px);
+    }
+    
+    .translate-empty {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      color: var(--text-dim);
+    }
+    
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+    
+    .empty-title {
+      font-family: 'Cinzel', serif;
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    
+    .empty-sub {
+      font-size: 13px;
+    }
+    
+    .translate-result {
+      animation: fadeIn 0.4s ease;
+    }
+    
+    .result-header {
+      padding: 16px 20px;
+      background: rgba(212, 175, 55, 0.08);
+      border-bottom: 1px solid var(--gold-border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .result-section {
+      padding: 20px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+    }
+    
+    .result-section:last-child {
+      border-bottom: none;
+    }
+    
+    .result-label {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--gold-dim);
+      margin-bottom: 8px;
+    }
+    
+    .result-text {
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.7;
+    }
+    
+    .key-terms-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    
+    .term-card {
+      background: rgba(212, 175, 55, 0.03);
+      border: 1px solid var(--gold-border);
+      border-radius: var(--r-sm);
+      padding: 10px 14px;
+    }
+    
+    .term-orig {
+      font-weight: 700;
+      color: var(--gold);
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+    
+    .term-meaning {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
   </style>
 </head>
 
@@ -921,6 +1195,9 @@
       <div class="response-sidebar" id="response-sidebar"></div>
     </div>
   </div>
+
+  <!-- ── Translation ────────────────────────────────────── -->
+  <div id="screen-knowledge-graph" class="screen" style="height: 100vh;"></div>
 
   <!-- ── Learn ─────────────────────────────────────────── -->
   <div id="screen-learn" class="screen">
@@ -965,6 +1242,7 @@
     import { renderChatSidebar, updateChatMessages } from './src/components/ChatSidebar.js';
     import { renderReflectionQuiz } from './src/components/ReflectionQuiz.js';
     import { renderXPBar, updateXPBar, showLevelUpToast } from './src/components/XPSystem.js';
+    import { renderKnowledgeGraphPage } from './src/components/KnowledgeGraph.js';
 
     const screens = {
       landing: document.getElementById('screen-landing'),
@@ -972,6 +1250,7 @@
       persona: document.getElementById('screen-persona'),
       response: document.getElementById('screen-response'),
       learn: document.getElementById('screen-learn'),
+      knowledgeGraph: document.getElementById('screen-knowledge-graph'),
     };
 
     let prevLevel = 0;
@@ -1029,6 +1308,12 @@
 
           // Back button
           document.getElementById('response-back-btn').onclick = () => actions.goTo('persona');
+          break;
+
+        case 'knowledgeGraph':
+          if (!screens.knowledgeGraph.hasChildNodes() || !state.comingFromKnowledgeGraph) {
+            renderKnowledgeGraphPage(screens.knowledgeGraph);
+          }
           break;
       }
 
