@@ -1,0 +1,192 @@
+const fs = require('fs');
+
+const cssToInject = `
+    /* ══ CARDS VIEW ══ */
+    #cards-view{display:block}
+    .topic-tabs{display:flex;border-bottom:1px solid var(--gold-border);padding:0 28px;overflow-x:auto}
+    .tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:13px 22px;font-family:'Cinzel',serif;font-size:13px;color:var(--text-dim);cursor:pointer;transition:all .2s;white-space:nowrap;margin-bottom:-1px}
+    .tab-btn:hover{color:var(--text-muted)}.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+    .topic-panel{display:none}.topic-panel.active{display:block}
+    .topic-header{padding:28px 28px 20px;max-width:940px;margin:0 auto}
+    .t-eyebrow{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);margin-bottom:6px}
+    .t-name{font-family:'Cinzel',serif;font-size:28px;color:var(--gold);margin-bottom:10px}
+    .t-meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .t-pill{font-size:12px;color:var(--text-dim);background:var(--surface);border:1px solid var(--gold-border);border-radius:20px;padding:3px 12px}
+    .t-desc{font-size:14px;color:var(--text-muted);line-height:1.8;max-width:680px}
+    .sec-label{font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dim);padding:0 28px 14px;max-width:940px;margin:0 auto;display:block}
+    .info-bar{margin:0 auto 20px;max-width:940px;padding:0 28px}
+    .info-bar-inner{background:var(--gold-faint);border:1px solid var(--gold-border);border-radius:var(--r-md);padding:12px 18px;font-size:13px;color:var(--text-muted);line-height:1.6}
+    .info-bar-inner strong{color:var(--gold)}
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px;padding:0 28px 48px;max-width:940px;margin:0 auto}
+    /* Card */
+    .learn-card{background:var(--surface);border:1px solid var(--gold-border);border-radius:var(--r-lg);padding:20px 20px 16px;transition:all .3s;position:relative;overflow:hidden;animation:fadeUp .35s ease both;display:flex;flex-direction:column;gap:5px;cursor:pointer}
+    .learn-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold-dim);border-radius:3px 0 0 3px;transition:background .2s}
+    .learn-card:hover{border-color:var(--gold-border-hi);transform:translateY(-2px)}
+    .learn-card:hover::before{background:var(--gold)}
+    .learn-card.gc::before{background:var(--green)}.learn-card.oc::before{background:var(--orange)}
+    .c-ey{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim)}
+    .c-ey.g{color:var(--green)}.c-ey.o{color:var(--orange)}
+    .c-sk{font-family:'Noto Sans Devanagari','Cinzel',serif;font-size:16px;color:var(--gold);line-height:1.5}
+    .c-ro{font-size:11px;color:var(--text-dim);font-style:italic}
+    .c-hr{height:1px;background:linear-gradient(90deg,var(--gold-dim),transparent);opacity:.25;margin:4px 0}
+    .c-ti{font-size:14px;font-weight:700;color:var(--text);line-height:1.4}
+    .c-pr{font-size:12px;color:var(--text-dim);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .c-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+    .c-tag{font-size:10px;padding:2px 9px;border-radius:20px;background:var(--gold-faint);border:1px solid rgba(212,175,55,0.2);color:var(--gold-dim)}
+    .c-tag.g{background:rgba(58,155,140,.08);border-color:rgba(58,155,140,.25);color:var(--green)}
+    .c-tag.o{background:rgba(196,107,58,.08);border-color:rgba(196,107,58,.25);color:var(--orange)}
+    .rm-btn{margin-top:10px;align-self:flex-start;background:none;border:1px solid var(--gold-border);border-radius:var(--r-sm);padding:7px 16px;font-size:12px;font-family:'Cinzel',serif;color:var(--gold-dim);cursor:pointer;letter-spacing:.5px;transition:all .2s}
+    .rm-btn:hover{background:var(--gold-faint);border-color:var(--gold-border-hi);color:var(--gold)}
+    .rm-btn.g{border-color:rgba(58,155,140,.3);color:var(--green)}.rm-btn.g:hover{background:rgba(58,155,140,.07);border-color:var(--green)}
+    .rm-btn.o{border-color:rgba(196,107,58,.3);color:var(--orange)}.rm-btn.o:hover{background:rgba(196,107,58,.07);border-color:var(--orange)}
+    /* ══ DETAIL PAGE ══ */
+    #detail-view{display:none;min-height:100vh;animation:fadeIn .3s ease}
+    .det-header{display:flex;align-items:center;gap:14px;padding:16px 28px;border-bottom:1px solid var(--gold-border);position:sticky;top:0;background:var(--bg);z-index:10}
+    .close-btn{display:flex;align-items:center;gap:8px;background:none;border:1px solid var(--gold-border);color:var(--text-muted);border-radius:var(--r-sm);padding:8px 18px;cursor:pointer;font-family:'Lato',sans-serif;font-size:13px;font-weight:700;transition:all .2s}
+    .close-btn:hover{border-color:var(--gold-border-hi);color:var(--gold)}
+    .det-hdr-name{font-family:'Cinzel',serif;font-size:16px;color:var(--gold);flex:1}
+    .det-hdr-sub{font-size:12px;color:var(--text-dim)}
+    .det-body{max-width:780px;margin:0 auto;padding:36px 28px 60px}
+    .d-eyebrow{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);margin-bottom:8px}
+    .d-sk{font-family:'Noto Sans Devanagari','Cinzel',serif;font-size:30px;color:var(--gold);line-height:1.4;margin-bottom:4px}
+    .d-ro{font-size:14px;color:var(--text-dim);font-style:italic;margin-bottom:10px}
+    .d-title{font-family:'Cinzel',serif;font-size:22px;color:var(--text);margin-bottom:12px}
+    .d-meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+    .d-pill{font-size:12px;background:var(--surface);border:1px solid var(--gold-border);border-radius:20px;padding:4px 14px;color:var(--text-dim)}
+    .d-pill.g{border-color:rgba(58,155,140,.3);color:var(--green);background:rgba(58,155,140,.06)}
+    .d-pill.o{border-color:rgba(196,107,58,.3);color:var(--orange);background:rgba(196,107,58,.06)}
+    .d-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+    .d-tag{font-size:12px;padding:4px 14px;border-radius:20px;background:var(--gold-faint);border:1px solid rgba(212,175,55,.2);color:var(--gold-dim)}
+    .d-tag.g{background:rgba(58,155,140,.08);border-color:rgba(58,155,140,.25);color:var(--green)}
+    .gold-hr{height:1px;background:linear-gradient(90deg,var(--gold-dim),transparent);opacity:.3;margin:24px 0}
+    .d-sec{margin-bottom:28px}
+    .d-label{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+    .d-label::after{content:'';flex:1;height:1px;background:var(--gold-border)}
+    .shloka-box{background:var(--gold-faint);border-left:3px solid var(--gold-dim);border-radius:0 var(--r-md) var(--r-md) 0;padding:16px 20px;margin-bottom:8px}
+    .shloka-box.g{border-left-color:var(--green)}.shloka-box.o{border-left-color:var(--orange)}
+    .sk-text{font-family:'Noto Sans Devanagari',serif;font-size:18px;color:var(--gold);line-height:1.9;margin-bottom:6px}
+    .sk-trans{font-size:13px;color:var(--text-dim);font-style:italic;line-height:1.7}
+    .d-text{font-size:15px;color:var(--text-muted);line-height:1.85}
+    .d-text strong{color:var(--text);font-weight:700}
+    .lesson-box{background:var(--surface);border:1px solid var(--gold-border);border-radius:var(--r-md);padding:20px 24px;font-size:17px;font-style:italic;color:var(--text);line-height:1.7;border-left:4px solid var(--gold-dim)}
+    .lesson-box.g{border-left-color:var(--green)}.lesson-box.o{border-left-color:var(--orange)}
+    .story-blk{background:var(--surface2);border:1px solid var(--gold-border);border-radius:var(--r-md);padding:18px 20px;margin-bottom:12px}
+    .story-blk-t{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+    .story-blk-s{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:8px}
+    .story-blk-l{font-size:12px;color:var(--gold-dim);font-style:italic}
+    .ayur-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px}
+    @media(max-width:520px){.ayur-row{grid-template-columns:1fr}}
+    .ayur-blk{background:var(--surface2);border:1px solid var(--gold-border);border-radius:var(--r-md);padding:14px 16px}
+    .ayur-blk-l{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px}
+    .ayur-blk-t{font-size:13px;color:var(--text-muted);line-height:1.65}
+    .warn-box{background:rgba(226,75,74,.07);border:1px solid rgba(226,75,74,.25);border-radius:var(--r-md);padding:14px 18px;font-size:13px;color:#E24B4A;line-height:1.65}
+    .det-nav{display:flex;justify-content:space-between;align-items:center;margin-top:40px;padding-top:24px;border-top:1px solid var(--gold-border)}
+    .nav-btn{background:var(--surface);border:1px solid var(--gold-border);border-radius:var(--r-sm);padding:10px 20px;font-family:'Cinzel',serif;font-size:13px;color:var(--text-muted);cursor:pointer;transition:all .2s}
+    .nav-btn:hover{border-color:var(--gold-border-hi);color:var(--gold)}.nav-btn:disabled{opacity:.3;cursor:not-allowed}
+    .nav-ctr{font-size:13px;color:var(--text-dim)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+`;
+
+const htmlToInject = \`
+  <!-- ── Learn ─────────────────────────────────────────── -->
+  <div id="screen-learn" class="screen" style="flex-direction:column; overflow-y:auto;">
+    
+    <!-- ══ CARDS VIEW ══ -->
+    <div id="cards-view">
+      <div class="screen-header" style="position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:1px solid var(--gold-border); padding:16px 28px;">
+        <button class="btn btn-ghost" id="learn-back-btn">← Back to Home</button>
+        <span class="screen-header-title">Ancient Knowledge</span>
+      </div>
+      
+      <div class="topic-tabs">
+        <button class="tab-btn active" onclick="window.showTopic('gita',this)">🪷 Bhagavad Gita</button>
+        <button class="tab-btn" onclick="window.showTopic('panchatantra',this)">🐘 Panchatantra</button>
+        <button class="tab-btn" onclick="window.showTopic('ayurveda',this)">🌿 Ayurveda</button>
+        <button class="tab-btn" onclick="window.showTopic('arthashastra',this)">⚖️ Arthashastra</button>
+      </div>
+
+      <div class="topic-panel active" id="panel-gita">
+        <div class="topic-header">
+          <div class="t-eyebrow">Sacred Scripture</div><div class="t-name">Bhagavad Gita</div>
+          <div class="t-meta">
+            <span class="t-pill">✍️ Vyasa (Krishna–Arjuna dialogue)</span>
+            <span class="t-pill">📅 ~500 BCE – 200 BCE</span>
+            <span class="t-pill">📖 18 Chapters · 700 Shlokas</span>
+            <span class="t-pill">🌐 Part of Mahabharata</span>
+          </div>
+          <div class="t-desc">A 700-verse dialogue between Prince Arjuna and Lord Krishna on the battlefield of Kurukshetra. Each of the 18 chapters focuses on a different path to liberation — duty, action, devotion, or knowledge. Click any chapter to read the shloka, lesson, and modern connection in full.</div>
+        </div>
+        <span class="sec-label">All 18 Chapters — click Read More for full shloka + lesson</span>
+        <div class="cards-grid" id="gita-cards"></div>
+      </div>
+
+      <div class="topic-panel" id="panel-panchatantra">
+        <div class="topic-header">
+          <div class="t-eyebrow">Ancient Fables</div><div class="t-name">Panchatantra</div>
+          <div class="t-meta">
+            <span class="t-pill">✍️ Vishnu Sharma</span><span class="t-pill">📅 ~300 BCE</span>
+            <span class="t-pill">📖 5 Books · 84 Stories</span><span class="t-pill">🌐 Translated into 50+ languages</span>
+          </div>
+          <div class="t-desc">Pancha = Five, Tantra = Treatise. Five books of animal fables teaching political wisdom and practical life skills. One of the most translated books in human history. Click a book to read all its stories.</div>
+        </div>
+        <div class="info-bar"><div class="info-bar-inner"><strong>How to read:</strong> Each book has a frame story with smaller stories nested inside. Click any card to read all the stories inside.</div></div>
+        <span class="sec-label">5 Books (Tantras) — click Read Stories for full content</span>
+        <div class="cards-grid" id="pancha-cards"></div>
+      </div>
+
+      <div class="topic-panel" id="panel-ayurveda">
+        <div class="topic-header">
+          <div class="t-eyebrow">Ancient Medicine</div><div class="t-name">Ayurveda</div>
+          <div class="t-meta">
+            <span class="t-pill">✍️ Charaka, Sushruta, Vagbhata</span><span class="t-pill">📅 ~1500 BCE</span>
+            <span class="t-pill">📖 आयुर्वेद — Science of Life</span><span class="t-pill">🌐 WHO-recognized</span>
+          </div>
+          <div class="t-desc">Ayu (life) + Veda (knowledge). Built on balancing Vata, Pitta, and Kapha. Click any herb to see when to use it, how to prepare it, exact dosage, cautions, and the modern science behind it.</div>
+        </div>
+        <span class="sec-label">12 Key Herbs — click Full Guide for complete information</span>
+        <div class="cards-grid" id="ayur-cards"></div>
+      </div>
+
+      <div class="topic-panel" id="panel-arthashastra">
+        <div class="topic-header">
+          <div class="t-eyebrow">Political Science</div><div class="t-name">Arthashastra</div>
+          <div class="t-meta">
+            <span class="t-pill">✍️ Chanakya (Kautilya)</span><span class="t-pill">📅 ~300 BCE</span>
+            <span class="t-pill">📖 15 Books · 6000 Sutras</span><span class="t-pill">🌐 Rediscovered 1905 CE</span>
+          </div>
+          <div class="t-desc">Chanakya's masterwork on statecraft, economy, military strategy and governance. Lost for 1000 years, rediscovered in 1905. Click any book to read Chanakya's exact sutra and modern parallel.</div>
+        </div>
+        <span class="sec-label">15 Books (Adhikaranas) — click Read Sutra for Chanakya's exact words</span>
+        <div class="cards-grid" id="artha-cards"></div>
+      </div>
+    </div>
+
+    <!-- ══ DETAIL PAGE ══ -->
+    <div id="detail-view">
+      <div class="det-header">
+        <button class="btn btn-ghost" onclick="window.closeDetail()">← Back</button>
+        <span class="det-hdr-name" id="dh-name" style="margin-left: 10px;"></span>
+        <span class="det-hdr-sub" id="dh-sub" style="margin-left: auto;"></span>
+      </div>
+      <div class="det-body" id="det-body"></div>
+    </div>
+  </div>
+\`;
+
+let indexFile = 'index.html';
+let html = fs.readFileSync(indexFile, 'utf8');
+
+// 1. Replace CSS
+html = html.replace(/(\/\* Learn screen \*\/)[\s\S]*?(?=\/\* XP Toast \*\/)/, '$1' + cssToInject + '\n\n    ');
+
+// 2. Replace HTML
+const htmlStart = html.indexOf('<!-- ── Learn ─────────────────────────────────────────── -->');
+const htmlEnd = html.indexOf('  <script type="module">');
+
+if (htmlStart > -1 && htmlEnd > -1) {
+  html = html.slice(0, htmlStart) + htmlToInject + '\n' + html.slice(htmlEnd);
+}
+
+fs.writeFileSync(indexFile, html);
+console.log('index.html updated successfully with new Learn Screen structure');

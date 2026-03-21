@@ -1,0 +1,83 @@
+  <!-- ── Learn ─────────────────────────────────────────── -->
+  <div id="screen-learn" class="screen" style="flex-direction:column; overflow-y:auto; overflow-x:hidden;">
+    
+    <!-- ══ CARDS VIEW ══ -->
+    <div id="cards-view">
+      <div class="screen-header" style="position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:1px solid var(--gold-border); padding:16px 28px;">
+        <button class="btn btn-ghost" id="learn-back-btn">← Back to Home</button>
+        <span class="screen-header-title">Ancient Knowledge</span>
+      </div>
+      
+      <div class="topic-tabs">
+        <button class="tab-btn active" onclick="window.showTopic('gita',this)">🪷 Bhagavad Gita</button>
+        <button class="tab-btn" onclick="window.showTopic('panchatantra',this)">🐘 Panchatantra</button>
+        <button class="tab-btn" onclick="window.showTopic('ayurveda',this)">🌿 Ayurveda</button>
+        <button class="tab-btn" onclick="window.showTopic('arthashastra',this)">⚖️ Arthashastra</button>
+      </div>
+
+      <div class="topic-panel active" id="panel-gita">
+        <div class="topic-header">
+          <div class="t-eyebrow">Sacred Scripture</div><div class="t-name">Bhagavad Gita</div>
+          <div class="t-meta">
+            <span class="t-pill">✍️ Vyasa (Krishna–Arjuna dialogue)</span>
+            <span class="t-pill">📅 ~500 BCE – 200 BCE</span>
+            <span class="t-pill">📖 18 Chapters · 700 Shlokas</span>
+            <span class="t-pill">🌐 Part of Mahabharata</span>
+          </div>
+          <div class="t-desc">A 700-verse dialogue between Prince Arjuna and Lord Krishna on the battlefield of Kurukshetra. Each of the 18 chapters focuses on a different path to liberation — duty, action, devotion, or knowledge. Click any chapter to read the shloka, lesson, and modern connection in full.</div>
+        </div>
+        <span class="sec-label">All 18 Chapters — click Read More for full shloka + lesson</span>
+        <div class="cards-grid" id="gita-cards"></div>
+      </div>
+
+      <div class="topic-panel" id="panel-panchatantra">
+        <div class="topic-header">
+          <div class="t-eyebrow">Ancient Fables</div><div class="t-name">Panchatantra</div>
+          <div class="t-meta">
+            <span class="t-pill">✍️ Vishnu Sharma</span><span class="t-pill">📅 ~300 BCE</span>
+            <span class="t-pill">📖 5 Books · 84 Stories</span><span class="t-pill">🌐 Translated into 50+ languages</span>
+          </div>
+          <div class="t-desc">Pancha = Five, Tantra = Treatise. Five books of animal fables teaching political wisdom and practical life skills. One of the most translated books in human history. Click a book to read all its stories.</div>
+        </div>
+        <div class="info-bar"><div class="info-bar-inner"><strong>How to read:</strong> Each book has a frame story with smaller stories nested inside. Click any card to read all the stories inside.</div></div>
+        <span class="sec-label">5 Books (Tantras) — click Read Stories for full content</span>
+        <div class="cards-grid" id="pancha-cards"></div>
+      </div>
+
+      <div class="topic-panel" id="panel-ayurveda">
+        <div class="topic-header">
+          <div class="t-eyebrow">Ancient Medicine</div><div class="t-name">Ayurveda</div>
+          <div class="t-meta">
+            <span class="t-pill">✍️ Charaka, Sushruta, Vagbhata</span><span class="t-pill">📅 ~1500 BCE</span>
+            <span class="t-pill">📖 आयुर्वेद — Science of Life</span><span class="t-pill">🌐 WHO-recognized</span>
+          </div>
+          <div class="t-desc">Ayu (life) + Veda (knowledge). Built on balancing Vata, Pitta, and Kapha. Click any herb to see when to use it, how to prepare it, exact dosage, cautions, and the modern science behind it.</div>
+        </div>
+        <span class="sec-label">12 Key Herbs — click Full Guide for complete information</span>
+        <div class="cards-grid" id="ayur-cards"></div>
+      </div>
+
+      <div class="topic-panel" id="panel-arthashastra">
+        <div class="topic-header">
+          <div class="t-eyebrow">Political Science</div><div class="t-name">Arthashastra</div>
+          <div class="t-meta">
+            <span class="t-pill">✍️ Chanakya (Kautilya)</span><span class="t-pill">📅 ~300 BCE</span>
+            <span class="t-pill">📖 15 Books · 6000 Sutras</span><span class="t-pill">🌐 Rediscovered 1905 CE</span>
+          </div>
+          <div class="t-desc">Chanakya's masterwork on statecraft, economy, military strategy and governance. Lost for 1000 years, rediscovered in 1905. Click any book to read Chanakya's exact sutra and modern parallel.</div>
+        </div>
+        <span class="sec-label">15 Books (Adhikaranas) — click Read Sutra for Chanakya's exact words</span>
+        <div class="cards-grid" id="artha-cards"></div>
+      </div>
+    </div>
+
+    <!-- ══ DETAIL PAGE ══ -->
+    <div id="detail-view">
+      <div class="det-header">
+        <button class="btn btn-ghost" onclick="window.closeDetail()">← Back</button>
+        <span class="det-hdr-name" id="dh-name" style="margin-left: 10px;"></span>
+        <span class="det-hdr-sub" id="dh-sub" style="margin-left: auto;"></span>
+      </div>
+      <div class="det-body" id="det-body"></div>
+    </div>
+  </div>
