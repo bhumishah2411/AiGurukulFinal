@@ -1,0 +1,13 @@
+{
+  "name": "ai-gurukul-frontend",
+  "version": "1.0.0",
+  "description": "AI Gurukul frontend — ancient wisdom, modern UI",
+  "scripts": {
+    "start": "npx live-server --port=3000 --host=localhost",
+    "dev": "npx live-server --port=3000"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "note": "Pure HTML/CSS/JS — no build step required. Just open index.html or run npm start."
+}
