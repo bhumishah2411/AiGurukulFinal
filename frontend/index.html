@@ -1750,42 +1750,13 @@
   <!-- ── Learn ── rendered by Learn.js component ── -->
   <div id="screen-learn" class="screen"></div>
 
+  <!-- ── Manuscript Translator ── -->
+  <div id="screen-translate" class="screen"></div>
+
  <!-- ── Knowledge Graph ── -->
 <div id="screen-knowledge-graph" class="screen" style="height: 100vh;"></div>
 
-<!-- ── Learn ── -->
-<div id="screen-learn" class="screen"></div>
-    <div class="screen-header">
-      <button class="btn btn-ghost" id="learn-back-btn">← Back</button>
-      <span class="screen-header-title">Ancient Knowledge</span>
-    </div>
-    <div class="learn-body">
-      <h2>Choose a tradition</h2>
-      <p class="mt-1">Timeless texts, explained for modern life.</p>
-      <div class="topic-grid">
-        <div class="topic-card" data-topic="Panchatantra">
-          <div class="topic-icon">🐘</div>
-          <div class="topic-name">Panchatantra</div>
-          <div class="topic-desc">Animal fables with deep moral lessons for human behaviour.</div>
-        </div>
-        <div class="topic-card" data-topic="Bhagavad Gita">
-          <div class="topic-icon">🪷</div>
-          <div class="topic-name">Bhagavad Gita</div>
-          <div class="topic-desc">Krishna's teachings on duty, action, and the nature of the self.</div>
-        </div>
-        <div class="topic-card" data-topic="Ayurveda">
-          <div class="topic-icon">🌿</div>
-          <div class="topic-name">Ayurveda</div>
-          <div class="topic-desc">The ancient science of health, energy, and daily wellbeing.</div>
-        </div>
-        <div class="topic-card" data-topic="Arthashastra">
-          <div class="topic-icon">⚖️</div>
-          <div class="topic-name">Arthashastra</div>
-          <div class="topic-desc">Chanakya's treatise on strategy, leadership and governance.</div>
-        </div>
-      </div>
-    </div>
-  </div>
+
 
   <script type="module">
     import { state, actions, subscribe, getLevelName } from './src/hooks/useGurukul.js';
@@ -1798,6 +1769,7 @@
     import { renderXPBar, updateXPBar, showLevelUpToast } from './src/components/XPSystem.js';
     import { renderLearn } from './src/components/Learn.js';
 import { renderKnowledgeGraphPage } from './src/components/KnowledgeGraph.js';
+import { renderTranslationPage } from './src/components/TranslationPage.js';
 
     const screens = {
       landing: document.getElementById('screen-landing'),
@@ -1805,6 +1777,7 @@ import { renderKnowledgeGraphPage } from './src/components/KnowledgeGraph.js';
       persona: document.getElementById('screen-persona'),
       response: document.getElementById('screen-response'),
       learn: document.getElementById('screen-learn'),
+      translate: document.getElementById('screen-translate'),
       knowledgeGraph: document.getElementById('screen-knowledge-graph'),
     };
 
@@ -1858,13 +1831,17 @@ case 'learn':
   }
   break;
 
+case 'translate':
+  if (!screens.translate.hasChildNodes()) {
+    renderTranslationPage(screens.translate);
+  }
+  break;
+
 case 'knowledgeGraph':
   if (!screens.knowledgeGraph.hasChildNodes()) {
     renderKnowledgeGraphPage(screens.knowledgeGraph);
   }
   break;
-          }
-          break;
       }
       if (s.level > prevLevel) {
         showLevelUpToast(getLevelName());

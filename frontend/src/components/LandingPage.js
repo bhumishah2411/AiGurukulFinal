@@ -62,11 +62,18 @@ export function renderLanding(container) {
           <span class="mode-title">Knowledge Graph</span>
           <span class="mode-desc">Explore an interactive map of India's knowledge traditions powered by GenAI.</span>
         </button>
+
+        <button class="mode-card" id="btn-translator">
+          <span class="mode-icon">📜</span>
+          <span class="mode-title">Manuscript Translator</span>
+          <span class="mode-desc">Translate and analyze ancient manuscripts into modern understandable language.</span>
+        </button>
       </div>
     </div>
   `;
 
   container.querySelector('#btn-solve').addEventListener('click', () => actions.goTo('problem'));
   container.querySelector('#btn-knowledge-graph').addEventListener('click', () => actions.goTo('knowledgeGraph'));
+  container.querySelector('#btn-translator').addEventListener('click', () => actions.goTo('translate'));
   container.querySelector('#btn-learn').addEventListener('click', () => actions.goTo('learn'));
 }
