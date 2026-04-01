@@ -12,6 +12,7 @@
 /* ══════════════════════════════════════
    STYLES — injected once into <head>
 ══════════════════════════════════════ */
+import { actions } from '../hooks/useGurukul.js';
 function injectLearnStyles() {
   if (document.getElementById('learn-styles')) return;
   const s = document.createElement('style');
@@ -246,6 +247,9 @@ function buildSkeleton() {
         </div>
         <span class="l-sec-lbl">12 Key Herbs — click Full Guide for complete information</span>
         <div class="l-grid" id="l-ayur-grid"></div>
+        <div style="text-align:center; padding: 20px 20px 60px 20px; max-width: 940px; margin: 0 auto;">
+           <button id="btn-ayurveda-solve" class="l-nav-btn" style="background:var(--gold-dim);color:#0D0B08;font-weight:bold;font-size:15px;padding:12px 24px;">Solve my problem - Ayurvedic Style →</button>
+        </div>
       </div>
 
       <div class="l-panel" id="l-p-arthashastra">
@@ -550,6 +554,12 @@ function attachEvents() {
     // Close detail
     if (el.id === 'l-close') {
       closeDetail();
+      return;
+    }
+    // Solve Ayurvedic
+    if (el.id === 'btn-ayurveda-solve') {
+      actions.setSolveMode('ayurveda');
+      actions.goTo('problem');
       return;
     }
   });

@@ -9,5 +9,9 @@
   "devDependencies": {
     "live-server": "^1.2.2"
   },
-  "note": "Pure HTML/CSS/JS — no build step required. Just open index.html or run npm start."
+  "note": "Pure HTML/CSS/JS — no build step required. Just open index.html or run npm start.",
+  "dependencies": {
+    "simple-keyboard": "^3.8.122",
+    "simple-keyboard-layouts": "^3.4.183"
+  }
 }

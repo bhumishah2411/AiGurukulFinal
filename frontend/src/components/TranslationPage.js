@@ -115,17 +115,18 @@ export function renderTranslationPage(container) {
   const doTranslate = container.querySelector('#btn-do-translate');
   const outEmpty = container.querySelector('#translate-output-empty');
   const outContent = container.querySelector('#translate-output-content');
-  
+
   // Connect samples
   samples.forEach(card => {
     card.addEventListener('click', () => {
       inputBox.value = card.dataset.text;
     });
   });
-  
-  // Fake translation action
-  doTranslate.addEventListener('click', () => {
-    const hasText = inputBox.value.trim().length > 0;
+
+  // Real translation action
+  doTranslate.addEventListener('click', async () => {
+    const text = inputBox.value.trim();
+    const hasText = text.length > 0;
     const hasFile = fileInput.files && fileInput.files.length > 0;
     
     if (!hasText && !hasFile) return;
@@ -134,13 +135,74 @@ export function renderTranslationPage(container) {
     const originalText = doTranslate.innerHTML;
     doTranslate.innerHTML = '<span class="mode-icon" style="font-size:16px;">⏳</span> Translating...';
     
-    setTimeout(() => {
-      doTranslate.innerHTML = originalText;
+    try {
+      const response = await fetch('http://localhost:3001/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          sourceLang: container.querySelector('#source-lang').value,
+          targetLang: container.querySelector('#target-lang').value
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        outEmpty.style.display = 'none';
+        outContent.style.display = 'block';
+        outContent.innerHTML = renderResult(data.translation, container.querySelector('#target-lang').value);
+      } else {
+        alert("Translation failed: " + (data.error || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      // Fallback to simulated result if API fails
       outEmpty.style.display = 'none';
       outContent.style.display = 'block';
       outContent.innerHTML = renderSimulatedResult(inputBox.value, container.querySelector('#target-lang').value);
-    }, 800);
+    } finally {
+      doTranslate.innerHTML = originalText;
+    }
   });
+}
+
+function renderResult(translation, targetLang) {
+  const isHindi = targetLang === 'Hindi';
+  
+  return `
+    <div class="result-header">
+      <span class="box-icon">✨</span>
+      <span class="box-title">${isHindi ? 'अनुवाद और विश्लेषण' : 'TRANSLATION & ANALYSIS'}</span>
+    </div>
+    
+    <div class="result-section">
+      <div class="result-label">${isHindi ? 'शाब्दिक अनुवाद' : 'LITERAL TRANSLATION'}</div>
+      <p class="result-text">${translation.translatedText}</p>
+    </div>
+    
+    <div class="result-section">
+      <div class="result-label">${isHindi ? 'व्याख्या और सार' : 'EXPLANATION & ESSENCE'}</div>
+      <p class="result-text">${translation.explanation}</p>
+    </div>
+    
+    <div class="result-section">
+      <div class="result-label">${isHindi ? 'मुख्य शब्द' : 'KEY TERMS'}</div>
+      <div class="key-terms-grid">
+        ${translation.keyTerms.map(term => `
+          <div class="term-card">
+            <div class="term-orig">${term.orig}</div>
+            <div class="term-meaning">${term.meaning}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    
+    <div class="result-section">
+      <div class="result-label">${isHindi ? 'आधुनिक प्रासंगिकता' : 'MODERN RELEVANCE'}</div>
+      <p class="result-text">${translation.modernRelevance}</p>
+    </div>
+  `;
 }
 
 function renderSimulatedResult(text, targetLang) {
@@ -150,10 +212,10 @@ function renderSimulatedResult(text, targetLang) {
 
   let translatedText = "";
   let explanation = "This verse outlines a fundamental principle or axiom of its respective tradition. It emphasizes continuous learning and adherence to knowledge, or the foundational goals of well-being.";
-  
+
   if (isTamil) {
-    translatedText = isHindi 
-      ? "जो कुछ भी सीखा जाना चाहिए उसे त्रुटिहीन रूप से सीखें, और सीखने के बाद, उस पर अडिग रहें।" 
+    translatedText = isHindi
+      ? "जो कुछ भी सीखा जाना चाहिए उसे त्रुटिहीन रूप से सीखें, और सीखने के बाद, उस पर अडिग रहें।"
       : "Learn flawlessly what should be learned, and having learned, abide by it.";
   } else if (text.includes('चतुरधिकं')) {
     translatedText = isHindi
@@ -201,9 +263,9 @@ function renderSimulatedResult(text, targetLang) {
     
     <div class="result-section">
       <div class="result-label">${isHindi ? 'आधुनिक प्रासंगिकता' : 'MODERN RELEVANCE'}</div>
-      <p class="result-text">${isHindi 
-        ? "आज की भागदौड़ भरी दुनिया में, यह प्राचीन ज्ञान हमें मूलभूत गुणों को प्राथमिकता देने की याद दिलाता है—चाहे वह निवारक स्वास्थ्य देखभाल और कल्याण हो, या आजीवन सीखने की निरंतर खोज और ज्ञान को व्यवहार में लाना।"
-        : "In today's fast-paced world, this ancient wisdom reminds us to prioritize foundational virtues—whether that's preventative healthcare and wellness, or the continuous pursuit of lifelong learning and putting knowledge into practice."}</p>
+      <p class="result-text">${isHindi
+      ? "आज की भागदौड़ भरी दुनिया में, यह प्राचीन ज्ञान हमें मूलभूत गुणों को प्राथमिकता देने की याद दिलाता है—चाहे वह निवारक स्वास्थ्य देखभाल और कल्याण हो, या आजीवन सीखने की निरंतर खोज और ज्ञान को व्यवहार में लाना।"
+      : "In today's fast-paced world, this ancient wisdom reminds us to prioritize foundational virtues—whether that's preventative healthcare and wellness, or the continuous pursuit of lifelong learning and putting knowledge into practice."}</p>
     </div>
   `;
 }

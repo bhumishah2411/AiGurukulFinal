@@ -7,9 +7,9 @@
 import { state, actions } from '../hooks/useGurukul.js';
 
 const PERSONA_OPENERS = {
-  krishna:  'Namaste 🙏 The wisdom above is your foundation. Ask me to go deeper, explain simpler, or show you what to do right now.',
+  krishna: 'Namaste 🙏 The wisdom above is your foundation. Ask me to go deeper, explain simpler, or show you what to do right now.',
   chanakya: 'The words above are your strategy. Ask me to sharpen them, give you an example, or tell you your immediate next move.',
-  guru:     'Sit with what you have read. If anything is unclear, ask me. I will make it as simple as sharing a cup of chai.',
+  guru: 'Sit with what you have read. If anything is unclear, ask me. I will make it as simple as sharing a cup of chai.',
 };
 
 export function renderChatSidebar(container) {
@@ -31,7 +31,7 @@ export function renderChatSidebar(container) {
         type="text"
         class="input sidebar-input"
         id="chat-input"
-        placeholder="Ask anything…"
+        placeholder="Ask anything..."
         autocomplete="off"
         maxlength="300"
       />
@@ -49,8 +49,8 @@ export function renderChatSidebar(container) {
     </div>
   `;
 
-  const input    = container.querySelector('#chat-input');
-  const sendBtn  = container.querySelector('#send-btn');
+  const input = container.querySelector('#chat-input');
+  const sendBtn = container.querySelector('#send-btn');
   const messagesEl = container.querySelector('#chat-messages');
 
   function send() {

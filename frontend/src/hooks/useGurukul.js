@@ -21,11 +21,13 @@ export const state = {
   wisdom: null,               // { story, lesson, advice, science, actionPlan }
   wisdomSummary: '',          // 1-line summary passed to chat
   chatHistory: [],            // [{ role, content }]
+  chatLanguage: 'en',         // 'en' | 'hi' | 'gu'
   quizData: null,             // { question, options, feedback, tradition_reference }
   loading: false,
   error: null,
   xp: 0,
   level: 0,
+  solveMode: 'chat',          // 'chat' | 'ayurveda'
   comingFromKnowledgeGraph: false,
   listeners: [],
 };
@@ -72,6 +74,11 @@ export const actions = {
     notify();
   },
 
+  setSolveMode(mode) {
+    state.solveMode = mode;
+    notify();
+  },
+
   /** Set the problem text */
   setProblem(text) {
     state.problem = text;
@@ -92,7 +99,8 @@ export const actions = {
 
   /** Select a persona and fetch wisdom */
   async selectPersona(persona) {
-    if (!state.problem.trim()) {
+    // In chat mode (Solve My Problem), we skip problem validation
+    if (state.solveMode !== 'chat' && !state.problem.trim()) {
       state.error = 'Please enter your problem first.';
       notify();
       return;
@@ -104,6 +112,14 @@ export const actions = {
     state.quizData = null;
     state.loading = true;
     state.error = null;
+    
+    if (state.solveMode === 'chat') {
+      state.screen = 'chatbot';
+      state.loading = false;
+      notify();
+      return;
+    }
+
     state.screen = 'response';
     notify();
 
@@ -148,25 +164,59 @@ export const actions = {
   async sendChat(message) {
     if (!message.trim()) return;
 
-    const userMsg = { role: 'user', content: message };
+    // We keep englishContent for the backend, content for the UI
+    const finalHistoryLength = state.chatHistory.length;
+    let englishMessage = message;
+
+    // If not English, translate user's message TO English
+    if (state.chatLanguage && state.chatLanguage !== 'en') {
+      try {
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${state.chatLanguage}&tl=en&dt=t&q=${encodeURIComponent(message)}`);
+        const json = await res.json();
+        englishMessage = json[0].map(item => item[0]).join('');
+      } catch (e) {
+        console.error("User message translation failed", e);
+      }
+    }
+
+    const userMsg = { role: 'user', content: message, englishContent: englishMessage };
     state.chatHistory.push(userMsg);
     state.loading = true;
     notify();
 
     try {
+      // Send English message and English history back to the server
+      const englishHistory = state.chatHistory.slice(-10).map(m => ({ 
+        role: m.role, 
+        content: m.englishContent || m.content 
+      }));
+
       const data = await fetchChat(
         state.persona,
-        message,
-        state.chatHistory.slice(-10),
+        englishMessage,
+        englishHistory,
         state.wisdomSummary
       );
-      state.chatHistory.push({ role: 'assistant', content: data.reply });
+      
+      let reply = data.reply;
+      if (state.chatLanguage && state.chatLanguage !== 'en') {
+        try {
+          const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${state.chatLanguage}&dt=t&q=${encodeURIComponent(reply)}`);
+          const json = await res.json();
+          reply = json[0].map(item => item[0]).join('');
+        } catch (e) {
+          console.error("Translation failed", e);
+        }
+      }
+      
+      state.chatHistory.push({ role: 'assistant', content: reply, englishContent: data.reply });
       state.loading = false;
       addXP(5);
     } catch (err) {
       state.chatHistory.push({
         role: 'assistant',
-        content: 'My words failed to reach you just now. Please ask again.'
+        content: 'My words failed to reach you just now. Please ask again.',
+        englishContent: 'My words failed to reach you just now. Please ask again.'
       });
       state.loading = false;
       notify();
@@ -194,6 +244,11 @@ export const actions = {
   /** Award XP for completing reflection */
   completeReflection() {
     addXP(30);
+  },
+
+  setChatLanguage(lang) {
+    state.chatLanguage = lang;
+    notify();
   },
 
   clearError() {

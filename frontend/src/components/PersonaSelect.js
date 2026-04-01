@@ -55,10 +55,11 @@ export function renderPersonaSelect(container) {
         Same wisdom, different lenses. Choose the perspective that resonates.
       </p>
 
+      ${state.solveMode !== 'chat' ? `
       <div class="problem-preview anim-fade-up delay-2">
         <span class="problem-preview-label">Your question</span>
         <span class="problem-preview-text">"${escapeHtml(state.problem)}"</span>
-      </div>
+      </div>` : ''}
 
       <div class="persona-grid">
         ${Object.entries(personas).map(([key, p], i) => `
@@ -97,7 +98,9 @@ export function renderPersonaSelect(container) {
   });
 
   container.querySelector('#back-btn').addEventListener('click', () => {
-    if (state.comingFromKnowledgeGraph) {
+    if (state.solveMode === 'chat') {
+      actions.goTo('landing');
+    } else if (state.comingFromKnowledgeGraph) {
       actions.goTo('knowledgeGraph');
     } else {
       actions.goTo('problem');

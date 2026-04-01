@@ -55,7 +55,6 @@ export function renderProblemInput(container) {
   textarea.addEventListener('input', () => {
     const len = textarea.value.length;
     charCount.textContent = `${len} / 500`;
-    actions.setProblem(textarea.value);
   });
 
   textarea.addEventListener('keydown', (e) => {

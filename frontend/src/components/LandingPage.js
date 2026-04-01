@@ -72,7 +72,7 @@ export function renderLanding(container) {
     </div>
   `;
 
-  container.querySelector('#btn-solve').addEventListener('click', () => actions.goTo('problem'));
+  container.querySelector('#btn-solve').addEventListener('click', () => { actions.setSolveMode('chat'); actions.setProblem(''); actions.goTo('persona'); });
   container.querySelector('#btn-knowledge-graph').addEventListener('click', () => actions.goTo('knowledgeGraph'));
   container.querySelector('#btn-translator').addEventListener('click', () => actions.goTo('translate'));
   container.querySelector('#btn-learn').addEventListener('click', () => actions.goTo('learn'));

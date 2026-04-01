@@ -61,7 +61,8 @@ export async function switchPersona(problem, previousPersona, newPersona) {
  * @param {string} previousResponseSummary
  */
 export async function fetchChat(persona, message, history, previousResponseSummary) {
-  const res = await fetch(`${BASE_URL}/chat`, {
+  console.log("👉 Calling RAG API...");
+  const res = await fetch(`http://localhost:3005/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ persona, message, history, previousResponseSummary }),
