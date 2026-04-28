@@ -2,6 +2,13 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
+const mongoose = require("mongoose");
+
+// Database connection
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/aigurukul";
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log("📦 Connected to MongoDB"))
+  .catch(err => console.error("❌ MongoDB connection error:", err));
 
 const wisdomRouter = require("./routes/wisdom");
 const personaRouter = require("./routes/persona");
