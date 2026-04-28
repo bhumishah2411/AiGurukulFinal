@@ -8,23 +8,28 @@ process.on('unhandledRejection', (err) => {
   console.error("Unhandled Rejection:", err);
 });
 
-console.log("Loaded API Key:", process.env.ANTHROPIC_API_KEY);
-
 const express = require('express');
 const cors = require('cors');
-const { ChromaClient } = require('chromadb');
-const OpenAI = require("openai");
+const { Pinecone } = require("@pinecone-database/pinecone");
+const { CohereClient } = require("cohere-ai");
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+}));
 app.use(express.json());
 
-const client = new ChromaClient();
-const openai = new OpenAI({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1"
-});
+// 1. Initialize Pinecone and Cohere
+const pc = new Pinecone();
+const index = pc.index("aigurukul-index");
 
+// Global Cohere Client for both Embeddings and Chat Generation!
+const cohere = new CohereClient({ token: process.env.COHERE_API_KEY });
 // Keywords for auto-detecting persona if not specified
 const keywords = {
   krishna: ['karma', 'peace', 'arjuna', 'meditation', 'dharma', 'gita', 'detachment'],
@@ -41,43 +46,68 @@ function detectPersona(message) {
   }
   return 'guru'; // Default persona
 }
-// Common retrieval function
+// Common retrieval function (Step 2: Query Pinecone)
 async function getContext(collectionName, query, nResults = 2) {
   try {
-    const collection = await client.getCollection({ name: collectionName });
-    const results = await collection.query({
-      queryTexts: [query],
-      nResults: nResults,
+    // 1. Embed the user's question using Cohere v3 (inputType: "search_query" is required for queries)
+    const queryEmbeddingResponse = await cohere.embed({
+      model: "embed-english-v3.0",
+      texts: [query],
+      input_type: "search_query"
+    });
+    
+    // Safely extract the embedding
+    const queryVector = queryEmbeddingResponse.embeddings[0];
+
+    if (!queryVector) throw new Error("Query Embedding failed");
+
+    // 2. Search Pinecone in the specific namespace matching the persona
+    const queryResult = await index.namespace(collectionName).query({
+      topK: nResults,
+      vector: queryVector,
+      includeMetadata: true,
     });
 
-    // Combine fetched documents into a single string
-    if (results && results.documents && results.documents[0]) {
-      return results.documents[0].join('\n');
+    // 3. Extract text from results
+    if (queryResult.matches && queryResult.matches.length > 0) {
+      return queryResult.matches.map(r => r.metadata.text).join('\n\n');
     }
   } catch (error) {
-    console.error(`Error querying ${collectionName}:`, error);
+    console.error(`Error querying Pinecone namespace ${collectionName}:`, error);
   }
   return '';
 }
 
-// Base agent to call LLM
+// Base agent to call LLM using Cohere
 async function runAgentPrompt(systemPrompt, context, query) {
+  const strictSystemPrompt = `${systemPrompt} 
+
+*** CRITICAL DIRECTIVE ***
+1. You are strictly a closed-domain bot. You MUST ONLY use the facts provided in the 'Context knowledge retrieved from database'. 
+2. If the user's question asks for information not explicitly mentioned in the context (or if the context says 'No matching context found'), YOU MUST REFUSE TO ANSWER. 
+3. If you refuse, reply exactly: "Please ask questions according to the topics covered in my texts. I can only provide answers based on the ancient wisdom provided to me."
+4. DO NOT make up information. DO NOT use your internal training data. DO NOT attempt to answer general knowledge questions.`;
+
   const combinedPrompt = `Context knowledge retrieved from database:
-${context}
+${context || 'No matching context found.'}
 
-User Query: ${query}
+User Query: ${query}`;
 
-Use the context to inform your answer. Act according to your system prompt.`;
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Timeout")), 20000)
+  );
 
-  const response = await openai.chat.completions.create({
-    model: "openai/gpt-3.5-turbo",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: combinedPrompt }
-    ]
-  });
+  // Use Cohere's highly capable command-r-plus model for generation
+  const response = await Promise.race([
+    cohere.chat({
+      model: "command-r-plus-08-2024", // Exchanged command-r for command-r-plus due to deprecation
+      message: combinedPrompt,
+      preamble: strictSystemPrompt // Preamble acts as the system prompt instructions
+    }),
+    timeout
+  ]);
 
-  return response.choices[0].message.content;
+  return response.text;
 }
 // 1. Krishna Agent
 async function krishnaAgent(query, history = []) {
@@ -138,7 +168,290 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-const PORT = 3005;
+// ═══════════════════════════════════════════════════════════
+// QUIZ GENERATOR — File Upload + Topic-Based
+// ═══════════════════════════════════════════════════════════
+
+// Multer config — store uploads in /tmp/uploads for Render free-tier
+const uploadsDir = '/tmp/uploads';
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.pdf', '.txt', '.md', '.doc', '.docx'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) cb(null, true);
+    else cb(new Error('Unsupported file type. Use PDF, TXT, MD, or DOC.'));
+  }
+});
+
+// Helper: chunk text into overlapping segments
+function chunkText(text, chunkSize = 500, overlap = 50) {
+  const chunks = [];
+  const words = text.split(/\s+/);
+  for (let i = 0; i < words.length; i += chunkSize - overlap) {
+    const chunk = words.slice(i, i + chunkSize).join(' ');
+    if (chunk.trim().length > 20) chunks.push(chunk.trim());
+  }
+  return chunks;
+}
+
+// Helper: extract text from uploaded file
+async function extractText(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.pdf') {
+    const dataBuffer = fs.readFileSync(filePath);
+    const data = await pdfParse(dataBuffer);
+    return data.text;
+  }
+  // For txt, md, doc — just read as text
+  return fs.readFileSync(filePath, 'utf-8');
+}
+
+// Helper: generate quiz from context using LLM
+async function generateQuizFromContext(context, numQuestions, source = 'document') {
+  const prompt = `You are a quiz generator. Based ONLY on the following context, generate exactly ${numQuestions} multiple-choice quiz questions. Each question must have exactly 4 options (A, B, C, D) with only one correct answer.
+
+Context:
+${context}
+
+IMPORTANT: Return ONLY valid JSON in this exact format, no extra text:
+{
+  "questions": [
+    {
+      "question": "What is...?",
+      "options": {
+        "A": "Option A text",
+        "B": "Option B text",
+        "C": "Option C text",
+        "D": "Option D text"
+      },
+      "correctAnswer": "A",
+      "explanation": "Brief explanation of why this is correct"
+    }
+  ]
+}
+
+Generate exactly ${numQuestions} questions. Make them thoughtful and educational. Vary difficulty. Return ONLY the JSON object.`;
+
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Timeout")), 20000)
+  );
+  
+  const response = await Promise.race([
+    cohere.chat({
+      model: "command-r-plus-08-2024",
+      message: prompt,
+      preamble: "You are an expert quiz generator. You output ONLY valid JSON. No markdown, no code fences."
+    }),
+    timeout
+  ]);
+
+  let raw = response.text.trim();
+  // Strip markdown code fences if present
+  raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+  return JSON.parse(raw);
+}
+
+// ── POST /quiz/upload — Upload file → extract text → generate quiz directly ──
+app.post('/quiz/upload', upload.single('file'), async (req, res) => {
+  console.log("📝 Quiz Upload API HIT");
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    const numQuestions = Math.min(15, Math.max(1, parseInt(req.body.numQuestions) || 5));
+    const filePath = req.file.path;
+
+    console.log(`Processing file: ${req.file.originalname}, questions: ${numQuestions}`);
+
+    // 1. Extract text from the file
+    let text;
+    try {
+      text = await extractText(filePath);
+    } catch (extractErr) {
+      console.error('Text extraction error:', extractErr);
+      return res.status(400).json({ success: false, error: 'Failed to read the file. Make sure it is a valid PDF or text file.' });
+    }
+
+    if (!text || text.trim().length < 50) {
+      return res.status(400).json({ success: false, error: 'Could not extract enough text from file. Minimum 50 characters needed.' });
+    }
+
+    console.log(`Extracted ${text.length} characters from file`);
+
+    // 2. Chunk text and pick the most content-rich chunks
+    const chunks = chunkText(text, 400, 30);
+    console.log(`Created ${chunks.length} chunks`);
+
+    // 3. Take up to 8 chunks (spread evenly across the document for variety)
+    let selectedChunks;
+    if (chunks.length <= 8) {
+      selectedChunks = chunks;
+    } else {
+      const step = Math.floor(chunks.length / 8);
+      selectedChunks = [];
+      for (let i = 0; i < chunks.length && selectedChunks.length < 8; i += step) {
+        selectedChunks.push(chunks[i]);
+      }
+    }
+
+    const context = selectedChunks.join('\n\n');
+    console.log(`Using ${selectedChunks.length} chunks as context (${context.length} chars)`);
+
+    // 4. Generate quiz directly from the extracted content
+    const prompt = `You are a quiz generator. Based on the following document content, generate exactly ${numQuestions} multiple-choice quiz questions. The questions should test understanding of the key concepts, facts, and ideas in this document.
+
+Document content:
+${context}
+
+RULES:
+- Generate questions ONLY about the content provided above.
+- Each question must have exactly 4 options (A, B, C, D) with only one correct answer.
+- Make questions educational and varied in difficulty.
+- Questions should test comprehension of the material.
+
+Return ONLY valid JSON in this exact format, no extra text:
+{
+  "questions": [
+    {
+      "question": "What is...?",
+      "options": {
+        "A": "Option A text",
+        "B": "Option B text",
+        "C": "Option C text",
+        "D": "Option D text"
+      },
+      "correctAnswer": "A",
+      "explanation": "Brief explanation of why this is correct"
+    }
+  ]
+}
+
+Generate exactly ${numQuestions} questions. Return ONLY the JSON object.`;
+
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 20000));
+    const response = await Promise.race([
+      cohere.chat({
+        model: "command-r-plus-08-2024",
+        message: prompt,
+        preamble: "You are an expert quiz generator. You output ONLY valid JSON. No markdown, no code fences."
+      }),
+      timeout
+    ]);
+
+    let raw = response.text.trim();
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+    const quiz = JSON.parse(raw);
+
+    res.json({ success: true, quiz: quiz.questions, source: req.file.originalname });
+
+  } catch (error) {
+    console.error('Quiz upload error:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to generate quiz' });
+  }
+});
+
+// ── POST /quiz/topic — Topic string → generate quiz directly about the topic ──
+app.post('/quiz/topic', async (req, res) => {
+  console.log("📝 Quiz Topic API HIT");
+  try {
+    const { topic, numQuestions: nq } = req.body;
+    if (!topic || !topic.trim()) {
+      return res.status(400).json({ success: false, error: 'Topic is required' });
+    }
+
+    const numQuestions = Math.min(15, Math.max(1, parseInt(nq) || 5));
+    console.log(`Generating quiz for topic: "${topic}", questions: ${numQuestions}`);
+
+    // Try to get supplementary context from RAG collections
+    let ragContext = '';
+    const collections = ['krishna_collection', 'chanakya_collection', 'guru_collection'];
+
+    for (const colName of collections) {
+      try {
+        const ctx = await getContext(colName, topic, 2);
+        if (ctx) ragContext += ctx + '\n';
+      } catch (e) {
+        // skip
+      }
+    }
+
+    // Build a topic-focused prompt (RAG is supplementary, not primary)
+    const prompt = `You are a quiz generator. Generate exactly ${numQuestions} multiple-choice quiz questions specifically about the topic: "${topic}".
+
+${ragContext ? `Here is some supplementary reference material that may help (use it only if relevant to "${topic}"):\n${ragContext}\n` : ''}
+
+CRITICAL RULES:
+- Every question MUST be directly about "${topic}" — do not generate questions about unrelated topics.
+- Each question must have exactly 4 options (A, B, C, D) with only one correct answer.
+- Make questions educational, factual, and varied in difficulty.
+- Use your own knowledge about "${topic}" to create accurate questions.
+
+Return ONLY valid JSON in this exact format, no extra text:
+{
+  "questions": [
+    {
+      "question": "What is...?",
+      "options": {
+        "A": "Option A text",
+        "B": "Option B text",
+        "C": "Option C text",
+        "D": "Option D text"
+      },
+      "correctAnswer": "A",
+      "explanation": "Brief explanation of why this is correct"
+    }
+  ]
+}
+
+Generate exactly ${numQuestions} questions about "${topic}". Return ONLY the JSON object.`;
+
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 20000));
+    const response = await Promise.race([
+      cohere.chat({
+        model: "command-r-plus-08-2024",
+        message: prompt,
+        preamble: "You are an expert quiz generator. You output ONLY valid JSON. No markdown, no code fences."
+      }),
+      timeout
+    ]);
+
+    let raw = response.text.trim();
+    raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+    const quiz = JSON.parse(raw);
+
+    res.json({ success: true, quiz: quiz.questions, source: topic });
+
+  } catch (error) {
+    console.error('Quiz topic error:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to generate quiz' });
+  }
+});
+
+// Production Error Handler
+app.use((err, req, res, next) => {
+  console.error("Global Error:", err);
+  res.status(500).json({ error: "Something went wrong" });
+});
+
+// Health Route for Render
+app.get('/health', (req, res) => {
+  res.json({ status: "ok", service: "RAG Backend" });
+});
+
+app.get('/', (req, res) => {
+  res.send('RAG Backend is running securely.');
+});
+
+const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => {
-  console.log(`RAG Backend running on http://localhost:${PORT}`);
+    console.log(`RAG Backend running on port ${PORT}`);
 });

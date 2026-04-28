@@ -1,0 +1,560 @@
+/* game.css — Gamified Version Styles */
+:root {
+  --game-primary: var(--gold);
+  --game-secondary: var(--gold-light);
+  --game-accent: var(--guru);
+  --game-bg: var(--bg);
+  --game-card: var(--surface);
+  --game-border: var(--gold-border);
+}
+
+#screen-game {
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+}
+
+.game-header {
+  padding: 16px 24px;
+  background: var(--bg);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--game-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.game-header-left, .game-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.coin-display {
+  background: var(--gold-faint);
+  border: 1px solid var(--game-border);
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  color: var(--gold);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.1);
+}
+
+.game-title {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  color: var(--game-primary);
+  letter-spacing: 2px;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+/* User Selection */
+.game-user-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 40px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.user-card {
+  background: var(--game-card);
+  border: 2px solid var(--game-border);
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.user-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(212, 175, 55, 0.2);
+  border-color: #fff;
+}
+
+.user-card .user-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.user-card h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 24px;
+  color: var(--game-primary);
+  margin-bottom: 8px;
+}
+
+.user-card p {
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* 🗺️ Landscape Saga Map (No Scrolling) */
+.landscape-map-container {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  overflow: hidden; /* No scrolling */
+  background: var(--bg);
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(212, 175, 55, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(212, 175, 55, 0.05) 0%, transparent 40%);
+}
+
+.saga-path-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#saga-trail {
+  stroke: var(--gold-border);
+  stroke-width: 4;
+  opacity: 0.4;
+  filter: drop-shadow(0 0 5px var(--gold-dim));
+}
+
+.saga-nodes-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.saga-node {
+  position: absolute;
+  width: 60px;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.saga-node-inner {
+  width: 50px;
+  height: 50px;
+  background: var(--game-card);
+  border: 3px solid var(--game-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+  transition: all 0.3s;
+}
+
+.saga-node .node-num {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  color: var(--game-primary);
+}
+
+.saga-node-label {
+  position: absolute;
+  top: 55px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--text-sub);
+  font-family: 'Cinzel', serif;
+  white-space: nowrap;
+  pointer-events: none;
+  background: rgba(0,0,0,0.6);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.saga-node.locked {
+  opacity: 0.4;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.saga-node.completed .saga-node-inner {
+  background: var(--game-primary);
+  border-color: #fff;
+}
+
+.saga-node.completed .node-num {
+  color: #000;
+}
+
+.saga-node.current .saga-node-inner {
+  border-color: #fff;
+  transform: scale(1.2);
+  box-shadow: 0 0 25px var(--game-primary);
+}
+
+.saga-node:not(.locked):hover .saga-node-inner {
+  transform: scale(1.3);
+  border-color: #fff;
+  z-index: 10;
+}
+
+/* Jigsaw Puzzle Area */
+.puzzle-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  gap: 30px;
+}
+
+.puzzle-board {
+  display: grid;
+  background: #222;
+  border: 4px solid var(--game-border);
+  position: relative;
+  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+}
+
+.puzzle-piece {
+  border: 1px solid rgba(255,255,255,0.1);
+  background-size: cover;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+
+.puzzle-piece.placed {
+  cursor: default;
+  border: none;
+}
+
+.puzzle-piece.empty {
+  background: #111 !important;
+  border: 4px dashed var(--game-border);
+  opacity: 0.3;
+}
+
+/* Hint Modal */
+.hint-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s;
+}
+
+.hint-modal-content {
+  background: var(--game-card);
+  border: 2px solid var(--game-border);
+  padding: 40px;
+  border-radius: 20px;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 0 40px var(--game-primary);
+  animation: scaleUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hint-modal-content h2 {
+  font-family: 'Cinzel', serif;
+  color: var(--game-primary);
+  margin-bottom: 20px;
+}
+
+.hint-modal-content p {
+  font-size: 18px;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.hints-reveal {
+  max-width: 600px;
+  width: 100%;
+  background: rgba(255, 215, 0, 0.05);
+  border-left: 4px solid var(--game-primary);
+  padding: 20px;
+  border-radius: 0 12px 12px 0;
+}
+
+.hint-item {
+  margin-bottom: 10px;
+  font-style: italic;
+  color: #ddd;
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Guessing Area */
+.guess-box {
+  background: var(--game-card);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--game-border);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.guess-box input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background: #333;
+  border: 1px solid var(--game-border);
+  color: #fff;
+  margin-bottom: 12px;
+  font-size: 18px;
+  text-align: center;
+}
+
+.btn-game {
+  background: var(--game-primary);
+  color: #000;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Cinzel', serif;
+}
+
+.btn-game:hover {
+  background: #fff;
+  transform: translateY(-2px);
+}
+
+/* Shop */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 40px;
+}
+
+.shop-item {
+  background: var(--game-card);
+  border: 1px solid var(--game-border);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.shop-item:hover {
+  border-color: #fff;
+}
+
+.shop-item .item-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.shop-item h4 {
+  color: var(--game-primary);
+  margin-bottom: 5px;
+}
+
+.shop-item .price {
+  font-weight: bold;
+  color: #FFD700;
+  margin-bottom: 15px;
+  display: block;
+}
+
+/* 🛍️ Split View Store Layout */
+.store-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 30px;
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+@media(max-width: 768px) {
+  .store-layout { grid-template-columns: 1fr; }
+}
+
+.avatar-preview-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 4px double var(--game-border);
+  border-radius: 30px;
+  padding: 30px;
+  position: sticky;
+  top: 100px;
+}
+
+.avatar-container {
+  position: relative;
+  width: 100%;
+  max-width: 350px;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  overflow: visible; /* To allow items to poke out */
+  box-shadow: 0 0 50px rgba(0,0,0,1);
+}
+
+.avatar-base-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Better for gamified sprites with transparency */
+  border-radius: 20px;
+  filter: brightness(1.05); /* Make gamified colors pop */
+}
+
+/* 👑 Item Overlays - Polished for Realism & Fit */
+.item-overlay {
+  position: absolute;
+  font-size: 60px; /* Reduced from 100px for better fit */
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)) drop-shadow(0 0 8px rgba(255,215,0,0.4));
+  animation: itemPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 10;
+  transition: all 0.3s;
+}
+
+@keyframes itemPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Precise fitting for the Cartoon Avatars */
+.gold-crown-overlay { 
+  top: 15px; /* Moved down to sit on head */
+  left: 50%; 
+  transform: translateX(-50%); 
+  font-size: 75px; 
+  z-index: 15;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+}
+
+.peacock-feather-overlay { 
+  top: 10px; 
+  left: 30%; 
+  font-size: 60px; 
+  transform: rotate(-15deg); 
+  z-index: 12; 
+}
+
+.royal-bow-overlay { 
+  top: 35%; 
+  left: -20px; 
+  font-size: 110px; 
+  transform: rotate(-5deg); 
+  z-index: 5; 
+  opacity: 0.95; 
+}
+
+.silk-scroll-overlay { 
+  bottom: 15%; 
+  right: 10px; 
+  font-size: 70px; 
+  transform: rotate(10deg); 
+}
+
+.pearl-necklace-overlay { 
+  top: 55%; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  font-size: 90px; 
+  opacity: 1; 
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+}
+
+.floral-garland-overlay { top: 40%; left: 50%; transform: translateX(-50%); font-size: 140px; pointer-events: none; }
+.temple-bell-overlay { top: 0; left: 0; font-size: 80px; transform: rotate(-5deg); filter: drop-shadow(0 4px 8px #000); }
+.herbal-pot-overlay { bottom: 0; right: 0; font-size: 100px; }
+.gold-plating-overlay { inset: 0; background: linear-gradient(45deg, transparent, rgba(255,215,0,0.2)); border: 4px solid #FFD700; border-radius: 20px; font-size: 0; opacity: 0.6; }
+
+.avatar-info {
+  margin-top: 25px;
+  text-align: center;
+}
+
+.divine-name {
+  font-family: 'Cinzel', serif;
+  font-size: 28px;
+  color: var(--game-primary);
+  margin-bottom: 5px;
+}
+
+.divine-rank {
+  font-size: 14px;
+  color: #aaa;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Store Items List (Right Side) */
+.store-items-section {
+  background: var(--game-card);
+  border-radius: 24px;
+  padding: 24px;
+  border: 1px solid var(--game-border);
+}
+
+.store-grid-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.compact-shop-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px 20px;
+  border: 1px solid transparent;
+  transition: all 0.3s;
+}
+
+.compact-shop-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--game-border);
+}
+
+.compact-shop-item.owned {
+  border-left: 4px solid var(--game-accent);
+}
+
+.item-info-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.compact-icon { font-size: 32px; }
+
+.compact-text { display: flex; flex-direction: column; }
+
+.item-name { font-weight: bold; font-family: 'Cinzel', serif; color: var(--game-primary); }
+
+.item-price { font-size: 13px; color: #aaa; margin-top: 2px; }
+
+.buy-btn-small {
+  padding: 8px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+}

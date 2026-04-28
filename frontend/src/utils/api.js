@@ -5,8 +5,9 @@
  *   import { fetchWisdom, fetchPersonas, fetchChat, fetchQuiz, switchPersona } from './utils/api.js';
  */
 
-const BASE_URL = "http://localhost:3001/api";
+import { BACKEND_URL, RAG_BACKEND_URL } from '../config.js';
 
+const BASE_URL = `${BACKEND_URL}/api`;
 async function handleResponse(res) {
   const data = await res.json();
   if (!res.ok || !data.success) {
@@ -62,7 +63,7 @@ export async function switchPersona(problem, previousPersona, newPersona) {
  */
 export async function fetchChat(persona, message, history, previousResponseSummary) {
   console.log("👉 Calling RAG API...");
-  const res = await fetch(`http://localhost:3005/chat`, {
+  const res = await fetch(`${RAG_BACKEND_URL}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ persona, message, history, previousResponseSummary }),

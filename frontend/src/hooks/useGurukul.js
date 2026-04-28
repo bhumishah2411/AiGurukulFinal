@@ -10,6 +10,7 @@
  */
 
 import { fetchWisdom, switchPersona, fetchChat, fetchQuiz, fetchPersonas } from '../utils/api.js';
+import { BACKEND_URL } from '../config.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 export const state = {
@@ -29,6 +30,16 @@ export const state = {
   level: 0,
   solveMode: 'chat',          // 'chat' | 'ayurveda'
   comingFromKnowledgeGraph: false,
+  user: JSON.parse(localStorage.getItem('gurukul_user')),
+  token: localStorage.getItem('gurukul_token'),
+  game: {
+    coins: 0,
+    selectedUser: null,
+    currentLevel: 1,
+    unlockedLevels: { ramayana: 1, mahabharata: 1, ayurveda: 1, temples: 1 },
+    inventory: [],
+    completedLevels: [],
+  },
   listeners: [],
 };
 
@@ -61,12 +72,90 @@ export const actions = {
 
   /** Navigate to a named screen */
   goTo(screen) {
-    state.screen = screen;
+    // If not logged in, force 'auth'
+    if (!state.token && screen !== 'auth') {
+      state.screen = 'auth';
+    } else {
+      state.screen = screen;
+    }
     state.error = null;
     if (screen === 'landing') {
       state.comingFromKnowledgeGraph = false;
     }
     notify();
+  },
+
+  // ── Auth Actions ────────────────────────────────────────────────────────
+  async signup(username, password) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Signup failed');
+      
+      state.user = data.user;
+      state.token = data.token;
+      state.game = { ...state.game, ...data.user };
+      localStorage.setItem('gurukul_token', data.token);
+      localStorage.setItem('gurukul_user', JSON.stringify(data.user));
+      actions.goTo('landing');
+      return { success: true };
+    } catch (err) {
+      state.error = err.message;
+      notify();
+      return { success: false, message: err.message };
+    }
+  },
+
+  async login(username, password) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Login failed');
+
+      state.user = data.user;
+      state.token = data.token;
+      state.game = { ...state.game, ...data.user };
+      localStorage.setItem('gurukul_token', data.token);
+      localStorage.setItem('gurukul_user', JSON.stringify(data.user));
+      actions.goTo('landing');
+      return { success: true };
+    } catch (err) {
+      state.error = err.message;
+      notify();
+      return { success: false, message: err.message };
+    }
+  },
+
+  logout() {
+    state.user = null;
+    state.token = null;
+    localStorage.removeItem('gurukul_token');
+    localStorage.removeItem('gurukul_user');
+    actions.goTo('auth');
+  },
+
+  async syncGame() {
+    if (!state.token) return;
+    try {
+      await fetch(`${BACKEND_URL}/api/user/sync`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.token}`
+        },
+        body: JSON.stringify(state.game)
+      });
+    } catch (err) {
+      console.warn('Sync failed', err);
+    }
   },
 
   setFromKnowledgeGraph(val) {
@@ -255,6 +344,52 @@ export const actions = {
     state.error = null;
     notify();
   },
+
+  // ── Game Actions ────────────────────────────────────────────────────────
+  gameSwitchUser(user) {
+    state.game.selectedUser = user;
+    state.screen = 'game-levels';
+    notify();
+  },
+
+  gameSelectLevel(lvl) {
+    state.game.currentLevel = lvl;
+    state.screen = 'game-play';
+    notify();
+  },
+
+  async gameAwardCoins(amount) {
+    state.game.coins += amount;
+    notify();
+    await actions.syncGame();
+  },
+
+  async gameCompleteLevel(user, lvl) {
+    const tag = `${user}-${lvl}`;
+    if (!state.game.completedLevels.includes(tag)) {
+      state.game.completedLevels.push(tag);
+      const next = lvl + 1;
+      if (next <= 20) {
+        state.game.unlockedLevels[user] = Math.max(state.game.unlockedLevels[user], next);
+      }
+    }
+    notify();
+    await actions.syncGame();
+  },
+
+  async gamePurchaseItem(item) {
+    if (state.game.coins >= item.price) {
+      state.game.coins -= item.price;
+      state.game.inventory.push({ 
+        id: item.id, 
+        purchasedFor: state.game.selectedUser 
+      });
+      notify();
+      await actions.syncGame();
+      return true;
+    }
+    return false;
+  }
 };
 
 // ── Helper: build a short summary string from wisdom for chat context ──────
