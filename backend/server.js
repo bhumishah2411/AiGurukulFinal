@@ -8,6 +8,8 @@ const personaRouter = require("./routes/persona");
 const chatRouter = require("./routes/chat");
 const quizRouter = require("./routes/quiz");
 const translateRouter = require("./routes/translate");
+const authRouter = require("./routes/auth");
+const userRouter = require("./routes/user");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,6 +35,8 @@ app.use("/api/persona", personaRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/quiz", quizRouter);
 app.use("/api/translate", translateRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
 
 // ── Health check ────────────────────────────────────────────
 app.get("/health", (req, res) => {
