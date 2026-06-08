@@ -271,6 +271,9 @@ Generate exactly ${numQuestions} questions. Make them thoughtful and educational
     raw = raw.substring(startIdx, endIdx + 1);
   }
   const quiz = JSON.parse(raw);
+  if (quiz.questions && quiz.questions.length > numQuestions) {
+    quiz.questions = quiz.questions.slice(0, numQuestions);
+  }
   return quiz;
 }
 
@@ -371,6 +374,9 @@ Generate exactly ${numQuestions} questions. Return ONLY the JSON object.`;
       raw = raw.substring(startIdx, endIdx + 1);
     }
     const quiz = JSON.parse(raw);
+    if (quiz.questions && quiz.questions.length > numQuestions) {
+      quiz.questions = quiz.questions.slice(0, numQuestions);
+    }
 
     res.json({ success: true, quiz: quiz.questions, source: req.file.originalname });
 
@@ -454,6 +460,9 @@ Generate exactly ${numQuestions} questions about "${topic}". Return ONLY the JSO
       raw = raw.substring(startIdx, endIdx + 1);
     }
     const quiz = JSON.parse(raw);
+    if (quiz.questions && quiz.questions.length > numQuestions) {
+      quiz.questions = quiz.questions.slice(0, numQuestions);
+    }
 
     res.json({ success: true, quiz: quiz.questions, source: topic });
 
