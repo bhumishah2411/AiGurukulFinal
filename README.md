@@ -49,12 +49,12 @@ ai-gurukul/
 cd backend
 npm install
 cp .env.example .env        # add your ANTHROPIC_API_KEY
-node server.js              # runs on :3001
+npm run dev              # runs on :3001
 ```
 
 ### Frontend (Person 1)
 ```bash
 cd frontend
 npm install
-npm start                   # runs on :3000
+npm run dev                   # runs on :3000
 ```

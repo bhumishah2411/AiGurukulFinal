@@ -4,10 +4,10 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const mongoose = require("mongoose");
 
-// Database connection
+// Database connection (Updated config check)
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/aigurukul";
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log("📦 Connected to MongoDB"))
+  .then(() => console.log("📦 Connected to MongoDB successfully"))
   .catch(err => console.error("❌ MongoDB connection error:", err));
 
 const wisdomRouter = require("./routes/wisdom");

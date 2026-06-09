@@ -81,21 +81,32 @@ Please provide your wisdom as ${persona}.`;
 /**
  * Parse the raw Claude text response into a structured object.
  */
-function parseWisdomResponse(raw) {
+function parseWisdomResponse(rawText) {
+  // Normalize by stripping markdown bold asterisks
+  const raw = rawText.replace(/\*\*/g, "");
+
   const extract = (label, nextLabels) => {
-    const start = raw.indexOf(`${label}:`);
-    if (start === -1) return "";
+    // Match label case-insensitively with colon
+    const regex = new RegExp(`${label}:`, 'i');
+    const match = raw.match(regex);
+    if (!match) return "";
+    const start = match.index;
     let end = raw.length;
     for (const next of nextLabels) {
-      const idx = raw.indexOf(`${next}:`, start + label.length + 1);
-      if (idx !== -1 && idx < end) end = idx;
+      const nextRegex = new RegExp(`${next}:`, 'i');
+      const nextMatch = raw.slice(start + match[0].length).match(nextRegex);
+      if (nextMatch) {
+        const idx = start + match[0].length + nextMatch.index;
+        if (idx < end) end = idx;
+      }
     }
-    return raw.slice(start + label.length + 1, end).trim();
+    return raw.slice(start + match[0].length, end).trim();
   };
 
   const adviceRaw = extract("ADVICE", ["SCIENCE", "ACTION_PLAN"]);
   const parseAdviceLine = (prefix) => {
-    const match = adviceRaw.match(new RegExp(`${prefix}:\\s*(.+)`));
+    const regex = new RegExp(`${prefix}:\\s*(.+)`, 'i');
+    const match = adviceRaw.match(regex);
     return match ? match[1].trim() : "";
   };
 
