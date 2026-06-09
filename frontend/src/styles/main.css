@@ -911,3 +911,14 @@ code {
     transform: translateX(5px);
     text-shadow: 0 0 15px rgba(255, 107, 107, 0.4);
 }
+
+@media(max-width: 768px) {
+  .screen-header {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+  .screen-header-title {
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+}
