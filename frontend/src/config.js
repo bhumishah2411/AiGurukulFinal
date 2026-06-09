@@ -9,3 +9,7 @@ export const BACKEND_URL = isLocalhost
 export const RAG_BACKEND_URL = isLocalhost
   ? 'http://localhost:3005'
   : 'https://aigurukul-rag.onrender.com';
+
+// Add your Google OAuth Client ID here!
+export const GOOGLE_CLIENT_ID = '60293514679-jkaco6k0flrf2sbk9ng9o04m0gi7gv3f.apps.googleusercontent.com';
+

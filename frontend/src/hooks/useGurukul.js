@@ -134,6 +134,30 @@ export const actions = {
     }
   },
 
+  async loginWithGoogle(credential) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Google login failed');
+
+      state.user = data.user;
+      state.token = data.token;
+      state.game = { ...state.game, ...data.user };
+      localStorage.setItem('gurukul_token', data.token);
+      localStorage.setItem('gurukul_user', JSON.stringify(data.user));
+      actions.goTo('landing');
+      return { success: true };
+    } catch (err) {
+      state.error = err.message;
+      notify();
+      return { success: false, message: err.message };
+    }
+  },
+
   logout() {
     state.user = null;
     state.token = null;
