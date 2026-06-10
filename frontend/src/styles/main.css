@@ -196,7 +196,6 @@ code {
   font-size: 15px;
   outline: none;
   transition: border-color var(--transition);
-  caret-color: #facc15;
 }
 
 .input:focus,
@@ -223,6 +222,10 @@ code {
   border-bottom: 1px solid var(--gold-border);
   min-height: 64px;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 100;
 }
 
 .screen-header-title {
