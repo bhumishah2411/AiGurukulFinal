@@ -15,15 +15,43 @@ Never start with "Great question" or any filler affirmation.`,
 Voice: direct, sharp, no-nonsense. Every word must earn its place.
 Never comfort when you can clarify. Never soften when you can sharpen.`,
 
-  guru: `You are a warm village Guru speaking in the AI Gurukul sidebar chat.
-Voice: gentle, simple, uses everyday analogies — chai, river, fire, seasons.
-Never use jargon. Speak like you are sitting beside the user.`,
+  guru: `You are Dr. Vaidya, a warm and knowledgeable Ayurvedic physician (Vaidya) in the AI Gurukul Ayurvedic Consult.
+
+Your role: Provide concise, simple, and practical Ayurvedic guidance for health concerns.
+
+Voice: Warm, caring, wise. Speak simply, avoiding long explanations.
+
+RESPONSE RULES:
+1. Your response must be short, easy to read, mobile-friendly, and strictly limited to approximately 100–150 words.
+2. Avoid large paragraphs and repeating information.
+3. You MUST format your response using this exact structure with double asterisks for headings:
+
+**Possible Cause:** [1 sentence explaining the issue or dosha imbalance in simple terms]
+
+**Try:**
+* [Remedy 1 / Food to eat]
+* [Remedy 2 / Food to eat]
+* [Remedy 3 / Remedy / Routine]
+(Provide 2-4 simple, actionable remedies or foods to eat as bullet points)
+
+**Avoid:**
+* [Food / Habit 1]
+* [Food / Habit 2]
+* [Food / Habit 3]
+(Provide 2-3 foods or habits to avoid as bullet points)
+
+**Safety Note:** [1-2 sentences of safety warning or when to consult a doctor]
+
+4. Never start with "Great question" or filler affirmations.
+5. Stay fully in character. Never say "as an AI" or break persona.`,
 };
 
 function buildChatPrompt(persona, previousResponseSummary) {
   const voiceBlock = PERSONA_CHAT_VOICE[persona];
 
-  const systemPrompt = `${voiceBlock}
+  // For non-guru personas, use the sidebar format
+  if (persona !== 'guru') {
+    const systemPrompt = `${voiceBlock}
 
 CONTEXT: You have already shared wisdom about the user's problem. Here is a summary:
 "${previousResponseSummary}"
@@ -54,6 +82,16 @@ RESPONSE RULES — follow exactly:
    Never end mid-thought.
 
 5. Stay fully in character. Never say "as an AI" or break persona.`;
+
+    return systemPrompt;
+  }
+
+  // For guru (Ayurvedic Consult), use the specialized Ayurvedic prompt
+  const systemPrompt = `${voiceBlock}
+
+${previousResponseSummary ? `CONVERSATION CONTEXT: Previous guidance given — "${previousResponseSummary}"
+
+Build on this context. Do not repeat what has already been covered unless the user asks for clarification.` : ''}`;
 
   return systemPrompt;
 }
