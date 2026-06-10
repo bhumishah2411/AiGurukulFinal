@@ -1,9 +1,8 @@
 /**
  * PROMPT: chatContinuation
  *
- * Powers the sidebar chat feature.
- * Keeps replies tight (≤80 words) with specific rules
- * for the 3 most common follow-up types.
+ * Powers the sidebar chat feature and the standalone chatbot.
+ * Keeps replies structured, direct, and persona-specific.
  */
 
 const PERSONA_CHAT_VOICE = {
@@ -56,18 +55,7 @@ function buildChatPrompt(persona, previousResponseSummary) {
 CONTEXT: You have already shared wisdom about the user's problem. Here is a summary:
 "${previousResponseSummary}"
 
-RESPONSE RULES — follow exactly:
-1. Keep your reply UNDER 80 WORDS. Count them. This is a sidebar, not a lecture.
-2. Never repeat content already covered in the summary above.
-3. Detect the follow-up type and respond accordingly:
-
-   TYPE: "explain simpler" or "I don't understand"
-   → Use a physical object as your analogy (a candle, a river, a seed, a mirror).
-     Do not re-explain conceptually — show it as a tangible thing.
-
-   TYPE: "give me an example" or "example please"
-   → Give ONE real-world scenario. No hypotheticals.
-     Format: "Here is what this looks like in real life: [scenario]"
+Do not repeat what was already covered in this summary unless the user asks for clarification.` : ''}
 
    TYPE: "what should I do" or "what's my next step"
    → Give exactly ONE action. Not two, not three. ONE.
@@ -95,6 +83,7 @@ Build on this context. Do not repeat what has already been covered unless the us
 
   return systemPrompt;
 }
+
 
 /**
  * Build the messages array for multi-turn chat.

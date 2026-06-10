@@ -1,8 +1,8 @@
 /**
  * AyurvedaChat.js
  * Premium split-pane Ayurveda chatbot.
- * Left panel  → Herb process / properties info
- * Right panel → Chat interface
+ * Left panel  → Personalized Ayurvedic remedy flow (AI-generated)
+ * Right panel → Chat interface (AI-powered via Anthropic API)
  * Fully responsive: stacks on mobile with tab toggle.
  */
 
@@ -22,24 +22,49 @@ export function renderAyurvedaChat(container) {
 
   injectStyles();
   buildLayout();
+  updateLayoutState();
 }
 
-/* ─── Inject styles once ──────────────────────────────────────────── */
+/* ─── Inject styles once ──────────────────────────────────────────────────── */
 function injectStyles() {
-  if (document.getElementById('ayur-chat-styles')) return;
+  const existing = document.getElementById('ayur-chat-styles');
+  if (existing) existing.remove();
   const s = document.createElement('style');
   s.id = 'ayur-chat-styles';
   s.textContent = `
+    /* ── Screen override ── */
+    body:has(#screen-chatbot.active),
+    html:has(#screen-chatbot.active) {
+      height: 100vh !important;
+      height: 100dvh !important;
+      overflow: hidden !important;
+    }
+
+    #screen-chatbot.active {
+      display: flex !important;
+      flex-direction: column !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      overflow: hidden !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      z-index: 9999 !important;
+      background: #0d0b08 !important;
+    }
+
     /* ── Wrapper ── */
     .ayc-wrapper {
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      height: 100dvh;
+      width: 100% !important;
+      height: 100% !important;
       background: #0d0b08;
       font-family: 'Lato', sans-serif;
       overflow: hidden;
-      position: relative;
+      position: relative !important;
     }
 
     /* ── Top Header ── */
@@ -147,7 +172,8 @@ function injectStyles() {
     /* ── Main split body ── */
     .ayc-body {
       display: flex;
-      flex: 1;
+      flex: 1 !important;
+      min-height: 0 !important;
       overflow: hidden;
       gap: 0;
     }
@@ -157,6 +183,7 @@ function injectStyles() {
       width: 60%;
       min-width: 320px;
       max-width: 900px;
+      min-height: 0 !important;
       display: flex;
       flex-direction: column;
       border-right: 1px solid rgba(212,175,55,0.13);
@@ -164,42 +191,6 @@ function injectStyles() {
       flex-shrink: 0;
       overflow: hidden;
     }
-    .ayc-herb-selector {
-      padding: 14px 18px;
-      border-bottom: 1px solid rgba(212,175,55,0.13);
-      background: rgba(22, 17, 11, 0.95);
-    }
-    .ayc-herb-selector label {
-      display: block;
-      font-family: 'Cinzel', serif;
-      font-size: 10px;
-      color: rgba(212,175,55,0.5);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      font-weight: 700;
-    }
-    .ayc-herb-select {
-      width: 100%;
-      background: #1a1410;
-      border: 1px solid rgba(212,175,55,0.2);
-      color: #EDE8D5;
-      padding: 10px 12px;
-      border-radius: 8px;
-      font-size: 13.5px;
-      font-family: 'Lato', sans-serif;
-      outline: none;
-      cursor: pointer;
-      transition: border-color 0.2s;
-      appearance: none;
-      -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23D4AF37' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      padding-right: 32px;
-    }
-    .ayc-herb-select:focus { border-color: var(--gold, #D4AF37); }
-
     .ayc-info-scroll {
       flex: 1;
       overflow-y: auto;
@@ -209,101 +200,135 @@ function injectStyles() {
     .ayc-info-scroll::-webkit-scrollbar { width: 4px; }
     .ayc-info-scroll::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.15); border-radius: 4px; }
 
-    /* Herb info blocks */
-    .ayc-herb-name-wrap { margin-bottom: 18px; }
-    .ayc-herb-lat { font-size: 11px; color: rgba(212,175,55,0.4); font-style: italic; letter-spacing: 1px; margin-bottom: 4px; }
-    .ayc-herb-name {
-      font-family: 'Noto Sans Devanagari', serif;
-      font-size: 28px;
-      color: var(--gold, #D4AF37);
-      font-weight: 700;
-      line-height: 1.3;
-      margin-bottom: 3px;
-    }
-    .ayc-herb-ro { font-size: 15px; color: #C8BFA8; font-style: italic; margin-bottom: 2px; }
-    .ayc-herb-en { font-family: 'Cinzel', serif; font-size: 13px; color: rgba(212,175,55,0.6); }
-
-    .ayc-props-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin: 16px 0;
-    }
-    .ayc-prop {
-      background: rgba(212,175,55,0.04);
-      border: 1px solid rgba(212,175,55,0.12);
-      border-radius: 8px;
-      padding: 9px 10px;
+    .ayc-flow-empty, .ayc-flow-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 40px 20px;
       text-align: center;
     }
-    .ayc-prop-lbl {
-      display: block;
-      font-size: 9px;
-      color: rgba(212,175,55,0.45);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 3px;
+    .ayc-flow-spinner {
+      width: 40px;
+      height: 40px;
+      border: 2px solid rgba(212,175,55,0.1);
+      border-radius: 50%;
+      border-top-color: var(--gold, #D4AF37);
+      animation: ayc-spin 1s linear infinite;
     }
-    .ayc-prop-val { font-size: 11px; color: var(--gold, #D4AF37); font-weight: 600; }
-
-    .ayc-tags-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
-    .ayc-tag {
-      font-size: 10px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      background: rgba(58,155,140,0.08);
-      border: 1px solid rgba(58,155,140,0.22);
-      color: #3A9B8C;
-      letter-spacing: 0.5px;
+    @keyframes ayc-spin { to { transform: rotate(360deg); } }
+    .ayc-flow-container {
+      padding: 24px 20px;
+      animation: ayc-fadein 0.3s ease both;
     }
-
-    .ayc-divider {
-      height: 1px;
-      background: linear-gradient(90deg, rgba(212,175,55,0.2), transparent);
-      margin: 16px 0;
-    }
-
-    .ayc-info-sec { margin-bottom: 18px; }
-    .ayc-info-lbl {
+    .ayc-flow-title {
       font-family: 'Cinzel', serif;
-      font-size: 10px;
-      letter-spacing: 2px;
+      font-size: 18px;
+      color: var(--gold, #D4AF37);
+      margin-bottom: 18px;
+      line-height: 1.4;
+      text-align: center;
+      border-bottom: 1px solid rgba(212,175,55,0.15);
+      padding-bottom: 12px;
+    }
+    .ayc-flow-analysis {
+      background: rgba(212,175,55,0.03);
+      border: 1px solid rgba(212,175,55,0.1);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+    }
+    .ayc-flow-subtitle {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
-      color: rgba(212,175,55,0.55);
-      margin-bottom: 7px;
+      color: rgba(212,175,55,0.6);
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    .ayc-flow-analysis p {
+      font-size: 13px;
+      color: #C8BFA8;
+      line-height: 1.6;
+      margin: 0;
+    }
+    .ayc-flow-steps {
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: 24px;
+    }
+    .ayc-flow-steps::before {
+      content: '';
+      position: absolute;
+      left: 31px;
+      top: 10px;
+      bottom: 10px;
+      width: 1px;
+      background: linear-gradient(180deg, rgba(212,175,55,0.4) 0%, rgba(212,175,55,0.05) 100%);
+    }
+    .ayc-flow-step-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 22px;
+      position: relative;
+    }
+    .ayc-flow-step-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #1a1410;
+      border: 1px solid var(--gold, #D4AF37);
+      color: var(--gold, #D4AF37);
       display: flex;
       align-items: center;
-      gap: 7px;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px rgba(212,175,55,0.25);
+      z-index: 1;
     }
-    .ayc-info-lbl::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(212,175,55,0.1);
-    }
-    .ayc-info-val { font-size: 13.5px; color: #B8AF98; line-height: 1.75; }
-    .ayc-how-box {
-      background: rgba(58,155,140,0.04);
-      border-left: 3px solid rgba(58,155,140,0.5);
-      border-radius: 0 8px 8px 0;
-      padding: 13px 16px;
+    .ayc-flow-step-content { flex: 1; }
+    .ayc-flow-step-title {
+      font-family: 'Cinzel', serif;
       font-size: 13.5px;
-      color: #B8AF98;
-      line-height: 1.75;
+      color: var(--gold, #D4AF37);
+      font-weight: 600;
+      margin-bottom: 4px;
     }
-    .ayc-warn-box {
-      background: rgba(226,75,74,0.06);
-      border: 1px solid rgba(226,75,74,0.2);
-      border-radius: 8px;
-      padding: 12px 15px;
+    .ayc-flow-step-desc {
       font-size: 13px;
-      color: #ff6b6a;
+      color: #B8AF98;
       line-height: 1.65;
+    }
+    .ayc-flow-warning {
+      background: rgba(226,75,74,0.05);
+      border: 1px solid rgba(226,75,74,0.18);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .ayc-flow-warning-title {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: #ff6b6a;
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .ayc-flow-warning p {
+      font-size: 12.5px;
+      color: #ff8e8d;
+      line-height: 1.55;
+      margin: 0;
     }
 
     /* ── Right: Chat Panel ── */
     .ayc-chat-panel {
-      flex: 1;
+      flex: 1 !important;
+      min-height: 0 !important;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -345,8 +370,9 @@ function injectStyles() {
 
     /* Messages */
     .ayc-messages {
-      flex: 1;
-      overflow-y: auto;
+      flex: 1 !important;
+      min-height: 0 !important;
+      overflow-y: auto !important;
       padding: 20px 18px;
       display: flex;
       flex-direction: column;
@@ -372,9 +398,14 @@ function injectStyles() {
     .ayc-bubble.user {
       align-self: flex-end;
       background: linear-gradient(135deg, #7a5a10 0%, #c49a28 100%);
-      color: #fff;
+      color: #fff !important;
       box-shadow: 0 4px 14px rgba(139,105,20,0.2);
       border-bottom-right-radius: 4px;
+    }
+    .ayc-bubble.user p,
+    .ayc-bubble.user span,
+    .ayc-bubble.user strong {
+      color: #fff !important;
     }
     .ayc-bubble.assistant {
       align-self: flex-start;
@@ -402,12 +433,10 @@ function injectStyles() {
       background: rgba(16, 12, 8, 0.5);
       border-top: 1px solid rgba(212,175,55,0.07);
       flex-shrink: 0;
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none; /* IE 10+ */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
-    .ayc-chips::-webkit-scrollbar {
-      display: none; /* Safari/Chrome */
-    }
+    .ayc-chips::-webkit-scrollbar { display: none; }
     .ayc-chip {
       background: rgba(212,175,55,0.05);
       border: 1px solid rgba(212,175,55,0.2);
@@ -517,187 +546,73 @@ function injectStyles() {
         position: relative;
         overflow: hidden;
       }
-      .ayc-topbar {
-        padding: 12px 16px;
-      }
+      .ayc-topbar { padding: 12px 16px; }
       .ayc-header-title { font-size: 15px; }
-      .ayc-input {
-        font-size: 16px; /* Prevents auto-zoom on input focus on iOS */
-      }
+      .ayc-input { font-size: 16px; }
       .ayc-input-area {
         padding-bottom: calc(14px + env(safe-area-inset-bottom, 12px));
       }
-      .ayc-flow-title {
-        font-size: 16px;
-      }
+      .ayc-flow-title { font-size: 16px; }
     }
 
     @media (max-width: 480px) {
       .ayc-back-btn span { display: none; }
       .ayc-bubble { max-width: 90%; font-size: 13px; }
-      .ayc-props-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
-    /* ── Left tabs & custom flow ── */
-    .ayc-left-tabs {
-      display: flex;
-      background: rgba(22, 17, 11, 0.95);
-      border-bottom: 1px solid rgba(212,175,55,0.15);
-      flex-shrink: 0;
+    /* ── No Flow layout overrides (full-width ChatGPT-style mode) ── */
+    .ayc-wrapper.no-flow .ayc-info-panel {
+      display: none !important;
     }
-    .ayc-left-tab {
-      flex: 1;
-      padding: 12px 8px;
-      font-family: 'Cinzel', serif;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      color: rgba(212,175,55,0.45);
-      background: none;
-      border: none;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-transform: uppercase;
-      font-weight: bold;
+    .ayc-wrapper.no-flow .ayc-mobile-tabs {
+      display: none !important;
     }
-    .ayc-left-tab.active {
-      color: var(--gold, #D4AF37);
-      border-bottom-color: var(--gold, #D4AF37);
-      background: rgba(212,175,55,0.02);
-    }
-    .ayc-flow-empty, .ayc-flow-loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    .ayc-wrapper.no-flow .ayc-body {
       justify-content: center;
-      height: 100%;
-      padding: 40px 20px;
-      text-align: center;
+      background: rgba(10, 8, 6, 0.98);
     }
-    .ayc-flow-spinner {
-      width: 40px;
-      height: 40px;
-      border: 2px solid rgba(212,175,55,0.1);
-      border-radius: 50%;
-      border-top-color: var(--gold, #D4AF37);
-      animation: ayc-spin 1s linear infinite;
+    .ayc-wrapper.no-flow .ayc-chat-panel {
+      flex: 1 1 auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      width: 100% !important;
+      max-width: 860px !important;
+      height: 100% !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      transform: none !important;
+      border-left: none !important;
+      border-right: none !important;
+      background: transparent !important;
     }
-    @keyframes ayc-spin {
-      to { transform: rotate(360deg); }
+    /* Hide the redundant "Consult with Guru" sub-header in full-width mode */
+    .ayc-wrapper.no-flow .ayc-chat-topbar {
+      display: none !important;
     }
-    .ayc-flow-container {
-      padding: 24px 20px;
-      animation: ayc-fadein 0.3s ease both;
+    /* Chips: wrap and center them */
+    .ayc-wrapper.no-flow .ayc-chips {
+      overflow-x: unset !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      padding: 10px 20px !important;
     }
-    .ayc-flow-title {
-      font-family: 'Cinzel', serif;
-      font-size: 18px;
-      color: var(--gold, #D4AF37);
-      margin-bottom: 18px;
-      line-height: 1.4;
-      text-align: center;
-      border-bottom: 1px solid rgba(212,175,55,0.15);
-      padding-bottom: 12px;
+    /* Remove chip flex-shrink so they wrap naturally */
+    .ayc-wrapper.no-flow .ayc-chip {
+      flex-shrink: 1 !important;
+      white-space: normal !important;
+      text-align: center !important;
     }
-    .ayc-flow-analysis {
-      background: rgba(212,175,55,0.03);
-      border: 1px solid rgba(212,175,55,0.1);
-      border-radius: 8px;
-      padding: 14px 16px;
-      margin-bottom: 24px;
+    /* Bigger padding for messages in full-width mode */
+    .ayc-wrapper.no-flow .ayc-messages {
+      padding: 24px 24px !important;
     }
-    .ayc-flow-subtitle {
-      font-family: 'Cinzel', serif;
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: rgba(212,175,55,0.6);
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
-    .ayc-flow-analysis p {
-      font-size: 13px;
-      color: #C8BFA8;
-      line-height: 1.6;
-      margin: 0;
-    }
-    .ayc-flow-steps {
-      position: relative;
-      padding-left: 20px;
-      margin-bottom: 24px;
-    }
-    .ayc-flow-steps::before {
-      content: '';
-      position: absolute;
-      left: 31px;
-      top: 10px;
-      bottom: 10px;
-      width: 1px;
-      background: linear-gradient(180deg, rgba(212,175,55,0.4) 0%, rgba(212,175,55,0.05) 100%);
-    }
-    .ayc-flow-step-item {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 22px;
-      position: relative;
-    }
-    .ayc-flow-step-badge {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #1a1410;
-      border: 1px solid var(--gold, #D4AF37);
-      color: var(--gold, #D4AF37);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: bold;
-      flex-shrink: 0;
-      box-shadow: 0 0 8px rgba(212,175,55,0.25);
-      z-index: 1;
-    }
-    .ayc-flow-step-content {
-      flex: 1;
-    }
-    .ayc-flow-step-title {
-      font-family: 'Cinzel', serif;
-      font-size: 13.5px;
-      color: var(--gold, #D4AF37);
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    .ayc-flow-step-desc {
-      font-size: 13px;
-      color: #B8AF98;
-      line-height: 1.65;
-    }
-    .ayc-flow-warning {
-      background: rgba(226,75,74,0.05);
-      border: 1px solid rgba(226,75,74,0.18);
-      border-radius: 8px;
-      padding: 14px 16px;
-    }
-    .ayc-flow-warning-title {
-      font-family: 'Cinzel', serif;
-      font-size: 11px;
-      letter-spacing: 1px;
-      color: #ff6b6a;
-      text-transform: uppercase;
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-    .ayc-flow-warning p {
-      font-size: 12.5px;
-      color: #ff8e8d;
-      line-height: 1.55;
-      margin: 0;
-    }
+    /* User/assistant bubbles already have max-width 82% which is fine */
   `;
   document.head.appendChild(s);
 }
 
-/* ─── Build full layout ──────────────────────────────────────────── */
+/* ─── Build full layout ──────────────────────────────────────────────────── */
 function buildLayout() {
   _container.innerHTML = `
     <div class="ayc-wrapper" id="ayc-root">
@@ -726,7 +641,7 @@ function buildLayout() {
       <!-- Main split body -->
       <div class="ayc-body" id="ayc-body">
 
-        <!-- LEFT: Custom Remedy Flow Panel -->
+        <!-- LEFT: Remedy Flow Panel -->
         <div class="ayc-info-panel" id="ayc-info-panel" data-hidden="${_mobilePanelTab === 'info' ? 'false' : 'true'}">
           <div id="ayc-left-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
             ${renderLeftContent()}
@@ -773,7 +688,7 @@ function buildLayout() {
   bindEvents();
 }
 
-/* ─── Render dynamic left content ────────────────────────────────── */
+/* ─── Left panel content ─────────────────────────────────────────────────── */
 function renderLeftContent() {
   if (isFlowLoading) {
     return `
@@ -813,12 +728,10 @@ function renderLeftContent() {
     <div class="ayc-info-scroll" style="flex: 1;">
       <div class="ayc-flow-container">
         <h3 class="ayc-flow-title">${currentFlowData.title}</h3>
-        
         <div class="ayc-flow-analysis">
           <div class="ayc-flow-subtitle">Dosha Analysis</div>
           <p>${currentFlowData.doshaAnalysis}</p>
         </div>
-        
         <div class="ayc-flow-steps">
           ${currentFlowData.steps.map((s, idx) => `
             <div class="ayc-flow-step-item">
@@ -830,7 +743,6 @@ function renderLeftContent() {
             </div>
           `).join('')}
         </div>
-        
         ${currentFlowData.warning ? `
           <div class="ayc-flow-warning">
             <div class="ayc-flow-warning-title">⚠️ Safety &amp; Cautions</div>
@@ -843,13 +755,23 @@ function renderLeftContent() {
 }
 
 function updateLeftContent() {
-  const contentEl = document.getElementById('ayc-left-content');
-  if (contentEl) {
-    contentEl.innerHTML = renderLeftContent();
+  const el = document.getElementById('ayc-left-content');
+  if (el) el.innerHTML = renderLeftContent();
+}
+
+function updateLayoutState() {
+  const root = document.getElementById('ayc-root');
+  if (!root) return;
+
+  const hasFlow = currentFlowData !== null || isFlowLoading;
+  if (hasFlow) {
+    root.classList.remove('no-flow');
+  } else {
+    root.classList.add('no-flow');
   }
 }
 
-/* ─── HTML builders ──────────────────────────────────────────────── */
+/* ─── HTML helpers ───────────────────────────────────────────────────────── */
 function renderWelcome() {
   return `<div class="ayc-bubble assistant">
     Namaste 🙏🌿 I'm your Ayurvedic Guru. Please share your symptoms or health concern, and I will formulate a customized step-by-step healing remedy flow for you.
@@ -866,31 +788,28 @@ function renderChips() {
   return chips.map(c => `<button class="ayc-chip" data-q="${c}">${c}</button>`).join('');
 }
 
-/* ─── Event binding ──────────────────────────────────────────────── */
+/* ─── Event binding ──────────────────────────────────────────────────────── */
 function bindEvents() {
-  // Back button
   document.getElementById('ayc-back').onclick = () => {
     actions.setSolveMode('chat');
     if (_container) _container.innerHTML = '';
     actions.goTo('learn');
   };
 
-  // Send button
   const input = document.getElementById('ayc-input');
   const sendBtn = document.getElementById('ayc-send');
   if (sendBtn) sendBtn.onclick = handleSend;
   if (input) {
-    input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    };
   }
 
-  // Chips
   rebindChips();
 
-  // Mobile tabs
   document.getElementById('ayc-tab-info')?.addEventListener('click', () => switchMobileTab('info'));
   document.getElementById('ayc-tab-chat')?.addEventListener('click', () => switchMobileTab('chat'));
 
-  // Init correct mobile tab
   setMobileTab(_mobilePanelTab);
 }
 
@@ -904,7 +823,6 @@ function setMobileTab(tab) {
   const chatPanel = document.getElementById('ayc-chat-panel');
   const tabInfo = document.getElementById('ayc-tab-info');
   const tabChat = document.getElementById('ayc-tab-chat');
-
   if (!infoPanel || !chatPanel) return;
 
   if (tab === 'info') {
@@ -926,7 +844,6 @@ function rebindChips() {
   });
 }
 
-/* ─── Chat message handling ──────────────────────────────────────── */
 async function handleSend() {
   const input = document.getElementById('ayc-input');
   const msg = input.value.trim();
@@ -1072,7 +989,9 @@ async function sendMessage(msg) {
   // Asynchronously trigger custom flow generation on the left panel
   fetchCustomFlow(cleanMsg);
 
-  // Show thinking bubble
+  // Left-panel flow generation runs in parallel via fetchCustomFlow(cleanMsg)
+
+  // Show animated thinking bubble
   const messagesDiv = document.getElementById('ayc-messages');
   const thinkingId = 'ayc-thinking-' + Date.now();
   const thinking = document.createElement('div');
@@ -1097,9 +1016,10 @@ async function sendMessage(msg) {
   messagesDiv?.appendChild(thinking);
   scrollChat();
 
-  // Disable send while waiting
   const sendBtn = document.getElementById('ayc-send');
   if (sendBtn) sendBtn.disabled = true;
+
+  let reply = null;
 
   try {
     const res = await fetch(`${BACKEND_URL}/api/chat`, {
@@ -1132,6 +1052,9 @@ async function sendMessage(msg) {
       content: buildLocalChatReply(cleanMsg)
     });
   }
+
+  document.getElementById(thinkingId)?.remove();
+  state.chatHistory.push({ role: 'assistant', content: reply });
 
   if (sendBtn) sendBtn.disabled = false;
   refreshMessages();

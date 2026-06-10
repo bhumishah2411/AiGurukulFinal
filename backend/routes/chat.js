@@ -19,12 +19,15 @@ const { validateChatRequest } = require("../middleware/validate");
  */
 router.post("/", validateChatRequest, async (req, res, next) => {
   try {
-    const { persona, message, history, previousResponseSummary = "" } = req.body;
+    const { persona, message, history, previousResponseSummary = "", isAyurveda = false } = req.body;
 
     // Keep last 10 messages max to avoid bloating context
-    const trimmedHistory = history.slice(-10);
+    let trimmedHistory = history.slice(-10);
+    if (trimmedHistory.length > 0 && trimmedHistory[trimmedHistory.length - 1].role === 'user') {
+      trimmedHistory = trimmedHistory.slice(0, -1);
+    }
 
-    const systemPrompt = buildChatPrompt(persona, previousResponseSummary);
+    const systemPrompt = buildChatPrompt(persona, previousResponseSummary, isAyurveda);
     const messages = buildChatMessages(trimmedHistory, message);
 
     const reply = await callClaudeChat(systemPrompt, messages, 350);
